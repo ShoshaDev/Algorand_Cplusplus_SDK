@@ -10,12 +10,12 @@
 #include "vertices_errors.h"
 #include <stdio.h>
 
-#if defined _WIN32 || defined _WIN64
+#if defined APP_TYPE
+#define BASE64_IMPORT
+#elif defined _WIN32 || defined _WIN64
 #define BASE64_IMPORT __declspec(dllimport)
 #elif defined __linux__
 #define BASE64_IMPORT __attribute__((visibility("default")))
-#else
-#define BASE64_IMPORT
 #endif
 
 #ifdef __cplusplus

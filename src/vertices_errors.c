@@ -9,12 +9,12 @@
 #include "vertices_errors.h"
 #include "compilers.h"
 
-#if defined _WIN32 || defined _WIN64
-#define APPERROR_EXPORT __declspec(dllexport)
-#endif
+#define APP_TYPE UNIX_EXAMPLE
 
-#ifndef APPERROR_EXPORT
+#if defined APP_TYPE
 #define APPERROR_EXPORT
+#elif defined _WIN32 || defined _WIN64
+#define APPERROR_EXPORT __declspec(dllexport)
 #endif
 
 /**

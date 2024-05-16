@@ -5,10 +5,9 @@
  */
 
 #include "vertices_errors.h"
-#include <provider.h>
+#include "vertices_types.h"
 #include <curl/curl.h>
 #include <vertices_log.h>
-#include <string.h>
 
 static CURL *m_curl;
 static size_t

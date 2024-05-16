@@ -9,12 +9,15 @@
 
 #include <stdint.h>
 
-#if defined _WIN32 || defined _WIN64
+// define whether executable type is a library or exec file
+#define APP_TYPE EXEC
+
+#if defined APP_TYPE
+#define APPERROR_IMPORT
+#elif defined _WIN32 || defined _WIN64
 #define APPERROR_IMPORT __declspec(dllimport)
 #elif defined __linux__
 #define APPERROR_IMPORT __attribute__((visibility("default")))
-#else
-#define APPERROR_IMPORT
 #endif
 
 #ifdef __cplusplus

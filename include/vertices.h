@@ -12,12 +12,12 @@
 #include <stdio.h>
 #include "vertices_types.h"
 
-#if defined _WIN32 || defined _WIN64
+#if defined APP_TYPE
+#define VERTICES_IMPORT
+#elif defined _WIN32 || defined _WIN64
 #define VERTICES_IMPORT __declspec(dllimport)
 #elif defined __linux__
 #define VERTICES_IMPORT __attribute__((visibility("default")))
-#else
-#define VERTICES_IMPORT
 #endif
 
 #ifdef __cplusplus

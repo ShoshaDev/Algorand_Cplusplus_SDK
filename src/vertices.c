@@ -13,12 +13,12 @@
 #include "utils/base32.h"
 #include "vertices.h"
 
-#if defined _WIN32 || defined _WIN64
-#define VERTICES_EXPORT __declspec(dllexport)
-#endif
+#define APP_TYPE UNIX_EXAMPLE
 
-#ifndef VERTICES_EXPORT
+#if defined APP_TYPE
 #define VERTICES_EXPORT
+#elif defined _WIN32 || defined _WIN64
+#define VERTICES_EXPORT __declspec(dllexport)
 #endif
 
 static ret_code_t
