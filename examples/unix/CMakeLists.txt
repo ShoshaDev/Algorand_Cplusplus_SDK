@@ -1,5 +1,8 @@
+message(STATUS "Unix Example location: ${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(PROJECT_NAME unix_example)
 project(${PROJECT_NAME} C CXX)
+
 if (NOT MSVC)
     set (CMAKE_CXX_FLAGS "-std=c++11")
 endif()

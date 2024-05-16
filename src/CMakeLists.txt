@@ -28,14 +28,21 @@ set(VERTICES_INC_DIRS
 
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 
-if (COMPILE_UNIX)
+if( NOT DEFINED BUILT_TARGET )
+    set(BUILT_TARGET "NONE")
+endif()
 
+if( NOT DEFINED VERTICES_TYPE )
+    set(VERTICES_TYPE "SHARED")
+endif()
+
+if (COMPILE_UNIX)
     add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
-    if( ${BUILT_TARGET} STREQUAL vertices )
-        add_library(vertices SHARED ${VERTICES_SRC_FILES})
-    else()
+    if( ${VERTICES_TYPE} STREQUAL STATIC )
         add_library(vertices STATIC ${VERTICES_SRC_FILES})
+    else()
+        add_library(vertices SHARED ${VERTICES_SRC_FILES})
     endif()
 
     set_target_properties( vertices
