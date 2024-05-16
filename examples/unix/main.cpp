@@ -9,7 +9,6 @@
 #include <unix_config.h>
 #include <cstring>
 #include <sodium.h>
-#include <getopt.h>
 #include "utils/base32.h"
 #include "utils/base64.h"
 
@@ -21,8 +20,7 @@ typedef enum {
 static ret_code_t
 vertices_evt_handler(vtc_evt_t *evt);
 
-static provider_info_t providers =
-        {.url = (char *) SERVER_URL, .port = SERVER_PORT, .header = (char *) SERVER_TOKEN_HEADER};
+static provider_info_t providers;
 
 /// We store anything related to the account into the below structure
 /// The private key is used outside of the Vertices library:
@@ -33,14 +31,11 @@ typedef struct {
 } account_t;
 
 // Alice's account is used to send data, keys will be retrived from config/key_files.txt
-static account_t alice_account = {.private_key = {0}, .vtc_account = nullptr};
+static account_t alice_account;
 // Bob is receiving the money 😎
-static account_t bob_account = {.private_key = {0}, .vtc_account = nullptr};
+static account_t bob_account;
 
-static vertex_t m_vertex = {
-        .provider = &providers,
-        .vertices_evt_handler = vertices_evt_handler
-};
+static vertex_t m_vertex;
 
 static ret_code_t
 vertices_evt_handler(vtc_evt_t *evt) {
@@ -51,7 +46,7 @@ vertices_evt_handler(vtc_evt_t *evt) {
             signed_transaction_t *tx = nullptr;
             err_code = vertices_event_tx_get(evt->bufid, &tx);
             if (err_code == VTC_SUCCESS) {
-                LOG_DEBUG("About to sign tx: data length %lu", tx->payload_body_length);
+                LOG_DEBUG("About to sign tx: data length %zu", tx->payload_body_length);
 
                 // libsodium wants to have private and public keys concatenated
                 unsigned char keys[crypto_sign_ed25519_SECRETKEYBYTES] = {0};
@@ -61,7 +56,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
                        ADDRESS_LENGTH);
 
                 // prepend "TX" to the payload before signing
-                unsigned char to_be_signed[tx->payload_body_length + 2];
+                unsigned char *to_be_signed;
+                to_be_signed = (unsigned char*) malloc(tx->payload_body_length + 2);
+                memset(to_be_signed, 0, tx->payload_body_length + 2);
                 to_be_signed[0] = 'T';
                 to_be_signed[1] = 'X';
 
@@ -83,7 +80,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
                 LOG_DEBUG("Signature %s (%zu bytes)", b64_signature, b64_signature_len);
 
                 // send event to send the signed TX
-                vtc_evt_t sched_evt = {.type = VTC_EVT_TX_SENDING, .bufid = evt->bufid};
+                vtc_evt_t sched_evt;
+                sched_evt.type = VTC_EVT_TX_SENDING;
+                sched_evt.bufid = evt->bufid;
                 err_code = vertices_event_schedule(&sched_evt);
             }
         }
@@ -113,7 +112,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
             // the one-element map takes 4 bytes into our message packed payload <=> `txn`
             // we also add the `map` type before
             // which results in 5-bytes to be added before the payload at `payload_offset`
-            char payload[tx->payload_body_length + 5];
+            char *payload;
+            payload = (char *) malloc(tx->payload_body_length + 5);
+            memset(payload, 0, tx->payload_body_length + 5);
             payload[0] = (char) 0x81; // starting flag for map of one element
             memcpy(&payload[1],
                    &tx->payload[tx->payload_header_length - 4],
@@ -238,30 +239,19 @@ main(int argc, char *argv[]) {
     bool create_new = true;                // bug fixing convert false to tru at first.
     tx_type_t run_tx = PAY_TX;
 
-    int opt;
-    while ((opt = getopt(argc, argv, "npa")) != -1) {
-        switch (opt) {
-            case 'n': {
-                create_new = true;
-            }
-                break;
-            case 'p': {
-                run_tx = PAY_TX;
-            }
-                break;
-            case 'a': {
-                run_tx = APP_CALL_TX;
-            }
-                break;
+    // Init providers
+    providers.url = (char *) SERVER_URL;
+    providers.port = SERVER_PORT;
+    providers.header = (char *) SERVER_TOKEN_HEADER;
 
-            default: {
-                fprintf(stderr,
-                        "Usage:\n%s [-p|-a] [-n] \nSend signed transaction on the blockchain.\n-p (default)\tSend [p]ayment (Alice sends tokens to Bob)\n-a\t\t\t\tSend [a]pplication call (Alice sends integer value to application)\n-n\t\t\t\tCreate [n]ew account",
-                        argv[0]);
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+    m_vertex.provider = &providers;
+    m_vertex.vertices_evt_handler = vertices_evt_handler;
+
+    // Init Accounts Alice & Bob
+    memset(alice_account.private_key, 0, 32);
+    alice_account.vtc_account = nullptr;
+    memset(bob_account.private_key, 0, 32);
+    bob_account.vtc_account = nullptr;
 
     LOG_INFO("😎 Vertices SDK running on Unix-based OS");
 
