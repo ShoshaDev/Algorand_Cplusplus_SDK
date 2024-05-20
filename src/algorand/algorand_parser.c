@@ -8,7 +8,7 @@
 #include <vertices_log.h>
 #include <cJSON.h>
 #include "utils/base64.h"
-#include "parser.h"
+#include "../include/parser.h"
 
 //#define DEBUG_PARSER // to enable maximum verbosity and make the parser fail on error
 #ifndef DEBUG_PARSER

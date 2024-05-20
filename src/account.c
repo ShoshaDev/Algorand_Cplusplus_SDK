@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <vertices_log.h>
-#include <provider.h>
+#include "include/provider.h"
 #include "utils/base32.h"
 #include "account.h"
 

@@ -21,7 +21,6 @@ response_callback(void *chunk,
                   void *userdata)
 {
     return m_response_payload_cb((char *)chunk, size * nmemb);   // bug fixing
-//    return m_response_payload_cb((char *)chunk, size * nmemb);
 }
 
 ret_code_t
@@ -195,11 +194,12 @@ http_post(const provider_info_t *provider,
     return err_code;
 }
 
-void
+ret_code_t
 http_close()
 {
     curl_easy_cleanup(m_curl);
     curl_global_cleanup();
 
     m_curl = NULL;
+    return VTC_SUCCESS;
 }

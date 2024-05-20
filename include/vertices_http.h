@@ -62,7 +62,7 @@ http_post(const provider_info_t *provider,
           uint32_t *response_code);
 
 /// Close/deinit the client
-void
+ret_code_t
 http_close(void);
 
 #ifdef __cplusplus

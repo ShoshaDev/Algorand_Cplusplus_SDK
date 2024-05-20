@@ -9,9 +9,9 @@
 #include "vertices_http.h"
 #include <transaction.h>
 #include "utils/base64.h"
-#include <parser.h>
+#include "../include/parser.h"
 #include <string.h>
-#include "provider.h"
+#include "../include/provider.h"
 #include "cJSON.h"
 
 static size_t

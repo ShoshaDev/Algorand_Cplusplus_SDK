@@ -4,12 +4,12 @@
 #include "vertices_http.h"
 #include "compilers.h"
 
-#if defined _WIN32 || defined _WIN64
+#if defined APP_TYPE
+#define HTTP_WEAK_IMPORT
+#elif defined _WIN32 || defined _WIN64
 #define HTTP_WEAK_IMPORT __declspec(dllimport)
 #elif defined __linux__
 #define HTTP_WEAK_IMPORT __attribute__((visibility("default")))
-#else
-#define HTTP_WEAK_IMPORT
 #endif
 
 #ifdef __cplusplus
@@ -57,7 +57,7 @@ HTTP_WEAK_IMPORT ret_code_t set_http_post(
                                         uint32_t *response_code));
 
 HTTP_WEAK_IMPORT ret_code_t set_http_close(
-        void (*http_close_handler)(void));
+        ret_code_t (*http_close_handler)(void));
 
 #ifdef __cplusplus
 }

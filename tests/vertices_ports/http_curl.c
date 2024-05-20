@@ -192,7 +192,7 @@ http_post(const provider_info_t *provider,
     return err_code;
 }
 
-void
+ret_code_t
 http_close()
 {
     curl_easy_cleanup(m_curl);
