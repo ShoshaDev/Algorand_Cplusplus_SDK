@@ -15,18 +15,22 @@
 #define API_PROVIDER    ALGOEXPLORER
 #endif
 
+#define TESTNET_ALGONODE_API                "https://testnet-api.algonode.cloud"
 #define TESTNET_ALGOEXPLORER_API            "https://node.testnet.algoexplorerapi.io"
 #define TESTNET_PURESTAKE_API               "https://testnet-algorand.api.purestake.io/ps2"
 #define TESTNET_LOCAL_API                   "localhost"
 
+#define TESTNET_ALGONODE_PORT           443
 #define TESTNET_ALGOEXPLORER_PORT       0
 #define TESTNET_PURESTAKE_PORT          0
 #define TESTNET_LOCAL_PORT              8080
 
+#define TESTNET_ALGONODE_AUTH_HEADER        ""
 #define TESTNET_ALGOEXPLORER_AUTH_HEADER    ""
 #define TESTNET_PURESTAKE_AUTH_HEADER       "x-api-key:"
 #define TESTNET_LOCAL_AUTH_HEADER           "X-Algo-API-Token:"
 
+#define  TESTNET_ALGONODE_API_TOKEN        ""
 #define  TESTNET_ALGOEXPLORER_API_TOKEN    ""
 
 #if API_PROVIDER==PURESTAKE
@@ -56,9 +60,9 @@
 
 // default provider is AlgoExplorer
 
-#define SERVER_URL              TESTNET_ALGOEXPLORER_API
-#define SERVER_PORT             TESTNET_ALGOEXPLORER_PORT
-#define SERVER_TOKEN_HEADER     (TESTNET_ALGOEXPLORER_AUTH_HEADER TESTNET_ALGOEXPLORER_API_TOKEN)
+#define SERVER_URL              TESTNET_ALGONODE_API
+#define SERVER_PORT             TESTNET_ALGONODE_PORT
+#define SERVER_TOKEN_HEADER     (TESTNET_ALGONODE_AUTH_HEADER TESTNET_ALGONODE_API_TOKEN)
 #endif
 
 #define ACCOUNT_RECEIVER "NBRUQXLMEJDQLHE5BBEFBQ3FF4F3BZYWCUBBQM67X6EOEW2WHGS764OQXE"

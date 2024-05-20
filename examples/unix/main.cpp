@@ -9,8 +9,8 @@
 #include <unix_config.h>
 #include <cstring>
 #include <sodium.h>
-#include "utils/base32.h"
 #include "utils/base64.h"
+#include "http_weak.h"
 
 typedef enum {
     PAY_TX = 0,
@@ -248,9 +248,9 @@ main(int argc, char *argv[]) {
     m_vertex.vertices_evt_handler = vertices_evt_handler;
 
     // Init Accounts Alice & Bob
-    memset(alice_account.private_key, 0, 32);
+    memset(alice_account.private_key, 0, ADDRESS_LENGTH);
     alice_account.vtc_account = nullptr;
-    memset(bob_account.private_key, 0, 32);
+    memset(bob_account.private_key, 0, ADDRESS_LENGTH);
     bob_account.vtc_account = nullptr;
 
     LOG_INFO("😎 Vertices SDK running on Unix-based OS");
