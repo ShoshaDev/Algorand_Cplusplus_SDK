@@ -11,6 +11,7 @@
 #include <sodium.h>
 #include "utils/base64.h"
 #include "http_weak.h"
+#include "../vertices_ports/http_curl.cpp"
 
 typedef enum {
     PAY_TX = 0,
