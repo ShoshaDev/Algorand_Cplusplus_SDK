@@ -71,9 +71,9 @@ http_get(const provider_info_t *provider,
         curl_easy_setopt(m_curl, CURLOPT_URL, url_full);
         curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, NULL);
 
-#ifdef  WIN64
+//#ifdef  WIN64
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0);
-#endif
+//#endif
 
 #ifdef DEBUG
         curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L);
