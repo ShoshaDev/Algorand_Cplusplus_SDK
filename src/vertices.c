@@ -101,7 +101,7 @@ VERTICES_EXPORT ret_code_t
 vertices_account_new_from_mnemonic(char *mnemonic_str, account_info_t **account) {
     initialize_mnemonic();
     bytes recovered_seed = seed_from_mnemonic(mnemonic_str);
-    // assert(recovered_seed.size == crypto_sign_ed25519_SECRETKEYBYTES);
+    
     assert(sodium_init() >= 0);
     unsigned char ed25519_pk[crypto_sign_ed25519_PUBLICKEYBYTES];
     unsigned char ed25519_sk[crypto_sign_ed25519_SECRETKEYBYTES];

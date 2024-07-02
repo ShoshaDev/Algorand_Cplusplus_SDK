@@ -238,6 +238,7 @@ main(int argc, char *argv[]) {
     ret_code_t err_code;
 
     bool create_new = false;                // bug fixing convert false to tru at first.
+    bool mnemonic_allow = true;
     tx_type_t run_tx = PAY_TX;
 
     // Init providers
@@ -293,14 +294,18 @@ main(int argc, char *argv[]) {
         VTC_ASSERT(err_code);
     }
 
-//    //  3) from b32 address
-//    //      Note: creating a receiver account is not mandatory to send money to the account
-//    //      but we can use it to load the public key from the account address
-//    err_code = vertices_account_new_from_b32((char *) ACCOUNT_RECEIVER, &bob_account.vtc_account);
-//    VTC_ASSERT(err_code);
-    // 3) from mnemonic phrase
-    char *mnemonic_str = "base\ngiraffe\nbelieve\nmake\ntone\ntransfer\nwrap\nattend\ntypical\ndirt\ngrocery\ndistance\noutside\nhorn\nalso\nabstract\nslim\necology\nisland\nalter\ndaring\nequal\nboil\nabsent\ncarpet\n";
-    err_code = vertices_account_new_from_mnemonic(mnemonic_str, &bob_account.vtc_account);
+    if(!mnemonic_allow)
+    {
+        //  3) from b32 address
+        //      Note: creating a receiver account is not mandatory to send money to the account
+        //      but we can use it to load the public key from the account address
+        err_code = vertices_account_new_from_b32((char *) ACCOUNT_RECEIVER, &bob_account.vtc_account);
+    } else
+    {
+        // 3) from mnemonic phrase
+        char *mnemonic_str = "base\ngiraffe\nbelieve\nmake\ntone\ntransfer\nwrap\nattend\ntypical\ndirt\ngrocery\ndistance\noutside\nhorn\nalso\nabstract\nslim\necology\nisland\nalter\ndaring\nequal\nboil\nabsent\ncarpet\n";
+        err_code = vertices_account_new_from_mnemonic(mnemonic_str, &bob_account.vtc_account);
+    }
     VTC_ASSERT(err_code);
 
     LOG_INFO("🤑 %f Algos on Alice's account (%s)",
@@ -322,7 +327,7 @@ main(int argc, char *argv[]) {
             char *notes = (char *) "Alice sent 1 Algo to Bob";
             err_code =
                     vertices_transaction_pay_new(alice_account.vtc_account,
-                                                 (char *) bob_account.vtc_account->public_b32 /* or ACCOUNT_RECEIVER */,
+                                                 (char *) bob_account.vtc_account->public_key /* or ACCOUNT_RECEIVER */,
                                                  AMOUNT_SENT,
                                                  notes);
             VTC_ASSERT(err_code);
