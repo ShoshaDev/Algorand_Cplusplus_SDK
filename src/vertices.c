@@ -7,11 +7,13 @@
 #include "include/provider.h"
 #include <account.h>
 #include <transaction.h>
+#include "mnemonic.h"
 #include <vertices_log.h>
 #include <string.h>
 #include "utils/sha512_256.h"
 #include "utils/base32.h"
 #include "vertices.h"
+#include <sodium.h>
 
 #define APP_TYPE UNIX_EXAMPLE
 
@@ -35,11 +37,6 @@ typedef struct
     i = ((i) + 1) & (VTC_EVENTS_COUNT - 1)
 
 static vtc_events_buf_t m_events_queue = {0};
-
-VERTICES_EXPORT bool
-vertices_check_writable(){
-    return m_events_queue.rd_index == m_events_queue.wr_index;
-}
 
 /// Get node version
 /// \param version Pointer to \c provider_version_t
@@ -98,6 +95,20 @@ vertices_account_new_from_bin(char *public_key, account_info_t **account)
     VTC_ASSERT(err_code);
 
     return account_new(public_b32, account);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_account_new_from_mnemonic(char *mnemonic_str, account_info_t **account) {
+    initialize_mnemonic();
+    bytes recovered_seed = seed_from_mnemonic(mnemonic_str);
+    // assert(recovered_seed.size == crypto_sign_ed25519_SECRETKEYBYTES);
+    assert(sodium_init() >= 0);
+    unsigned char ed25519_pk[crypto_sign_ed25519_PUBLICKEYBYTES];
+    unsigned char ed25519_sk[crypto_sign_ed25519_SECRETKEYBYTES];
+
+    crypto_sign_ed25519_seed_keypair(ed25519_pk, ed25519_sk, recovered_seed.data);
+
+    return vertices_account_new_from_bin(ed25519_pk, account);
 }
 
 VERTICES_EXPORT ret_code_t

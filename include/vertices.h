@@ -24,9 +24,6 @@
 extern "C" {
 #endif
 
-VERTICES_IMPORT bool
-vertices_check_writable();
-
 VERTICES_IMPORT ret_code_t
 vertices_version(provider_version_t *version);
 
@@ -38,6 +35,9 @@ vertices_account_new_from_b32(char *public_b32, account_info_t **account);
 
 VERTICES_IMPORT ret_code_t
 vertices_account_new_from_bin(char *public_key, account_info_t **account);
+
+VERTICES_IMPORT ret_code_t
+vertices_account_new_from_mnemonic(char *mnemonic_str, account_info_t **account);
 
 VERTICES_IMPORT ret_code_t
 vertices_account_update(account_info_t *account);

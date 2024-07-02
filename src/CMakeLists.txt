@@ -3,8 +3,10 @@ message(STATUS "Vertices SDK location: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(VERTICES_SRC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/account.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/mnemonic.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/base64.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/base32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils/base2048.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/http_weak.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/sha512_256.c
         ${CMAKE_CURRENT_SOURCE_DIR}/vertices_errors.c
@@ -18,13 +20,15 @@ set(VERTICES_SRC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/../external/mpack/src/mpack/mpack-expect.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../external/mpack/src/mpack/mpack-node.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../external/mpack/src/mpack/mpack-writer.c
-        )
+)
 
 set(VERTICES_INC_DIRS
         "include"
         "../external/cJSON"
         "../external/mpack/src/mpack"
         )
+
+# add_definitions(-DSRC_CONFIG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/config/")
 
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 
@@ -77,7 +81,10 @@ if (COMPILE_UNIX)
 
     if( ${BUILT_TARGET} STREQUAL vertices )
         if(MSVC OR MSYS OR MINGW)
-            target_link_libraries(vertices cjson mbedcrypto )
+            set(libsodium_INCLUDE_DIRS "C:/libsodium-1.0.17/include")
+            include_directories(${libsodium_INCLUDE_DIRS})
+
+            target_link_libraries(vertices cjson mbedcrypto C:/libsodium-1.0.17/lib/libsodium.dll.a)
         elseif(UNIX AND NOT APPLE)
             target_link_libraries(vertices cjson mbedcrypto)
             target_compile_options(vertices PRIVATE -pedantic -Wall -Wstrict-prototypes -Wwrite-strings -Wshadow -Winit-self -Wformat=2 -Wmissing-prototypes -Wstrict-overflow=2 -Wc++-compat -Wundef -Wconversion -Wno-missing-braces)

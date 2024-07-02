@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 set(PROJECT_NAME Vertices-SDK)
 project(${PROJECT_NAME} C CXX)
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 14)
+
 #set(CMAKE_CXX_FLAGS "-std=c++11")
 #set(CMAKE_C_FLAGS "-std=c11")
 
