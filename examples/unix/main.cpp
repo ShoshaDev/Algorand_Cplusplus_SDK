@@ -23,18 +23,10 @@ vertices_evt_handler(vtc_evt_t *evt);
 
 static provider_info_t providers;
 
-/// We store anything related to the account into the below structure
-/// The private key is used outside of the Vertices library:
-///    you don't have to pass the private key to the SDK as signing is done outside
-typedef struct {
-    unsigned char private_key[ADDRESS_LENGTH];  //!< 32-bytes private key
-    account_info_t *vtc_account;               //!< pointer to Vertices account data
-} account_t;
-
 // Alice's account is used to send data, keys will be retrived from config/key_files.txt
-static account_t alice_account;
+static s_account_t alice_account;
 // Bob is receiving the money 😎
-static account_t bob_account;
+static s_account_t bob_account;
 
 static vertex_t m_vertex;
 
@@ -264,6 +256,11 @@ main(int argc, char *argv[]) {
     err_code = vertices_new(&m_vertex);
     VTC_ASSERT(err_code);
 
+    err_code = vertices_wallet_load((const char *) WALLET_PASSWORD);
+    if(err_code != VTC_SUCCESS) {
+        LOG_WARNING("😎 Vertices SDK Wallet can't be loaded");
+    }
+
     // making sure the provider is accessible
     err_code = vertices_ping();
     VTC_ASSERT(err_code);
@@ -284,15 +281,15 @@ main(int argc, char *argv[]) {
              version.patch);
 
     // Several ways to create/load accounts:
-    if (create_new) {
-        // 1) create new one
-        err_code = create_new_account();
-        VTC_ASSERT(err_code);
-    } else {
-        // 2) from files
-        err_code = load_existing_account();
-        VTC_ASSERT(err_code);
-    }
+    //  if (create_new) {
+//        // 1) create new one
+//        err_code = create_new_account();
+//        VTC_ASSERT(err_code);
+//    } else {
+//        // 2) from files
+//        err_code = load_existing_account();
+//        VTC_ASSERT(err_code);
+//    }
 
     if(!mnemonic_allow)
     {
@@ -305,6 +302,10 @@ main(int argc, char *argv[]) {
         // 3) from mnemonic phrase
         char *mnemonic_str = "base\ngiraffe\nbelieve\nmake\ntone\ntransfer\nwrap\nattend\ntypical\ndirt\ngrocery\ndistance\noutside\nhorn\nalso\nabstract\nslim\necology\nisland\nalter\ndaring\nequal\nboil\nabsent\ncarpet\n";
         err_code = vertices_account_new_from_mnemonic(mnemonic_str, &bob_account.vtc_account);
+    }
+
+    if(err_code == VTC_ERROR_NO_MEM) {
+        err_code = vertices_wallet_init();
     }
     VTC_ASSERT(err_code);
 
@@ -327,7 +328,7 @@ main(int argc, char *argv[]) {
             char *notes = (char *) "Alice sent 1 Algo to Bob";
             err_code =
                     vertices_transaction_pay_new(alice_account.vtc_account,
-                                                 (char *) bob_account.vtc_account->public_key /* or ACCOUNT_RECEIVER */,
+                                                 (char *) bob_account.vtc_account->public_key /* or ACCOUNT_RECEIVER Public Key */,
                                                  AMOUNT_SENT,
                                                  notes);
             VTC_ASSERT(err_code);
@@ -378,6 +379,8 @@ main(int argc, char *argv[]) {
     {
         LOG_INFO("👉 Haha This is transaction ID: %s",txID);
     }
+
+    vertices_wallet_save((const char*) WALLET_PASSWORD);
 
     free(txID);
     // delete the created accounts from the Vertices wallet

@@ -3,12 +3,14 @@ message(STATUS "Vertices SDK location: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(VERTICES_SRC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/account.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/account_storage.c
         ${CMAKE_CURRENT_SOURCE_DIR}/mnemonic.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/base64.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/base32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/base2048.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/http_weak.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/sha512_256.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils/secretbox.c
         ${CMAKE_CURRENT_SOURCE_DIR}/vertices_errors.c
         ${CMAKE_CURRENT_SOURCE_DIR}/vertices.c
         ${CMAKE_CURRENT_SOURCE_DIR}/algorand/algorand_parser.c

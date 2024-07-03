@@ -105,6 +105,30 @@ vertices_event_process(size_t *queue_size, unsigned char * txID);
 VERTICES_IMPORT ret_code_t
 vertices_new(vertex_t *config);
 
+/// Init Wallet on Vertices SDK
+/// Init accounts
+/// \return
+/// * VTC_SUCCESS on success
+/// * VTC_ERROR_INTERNAL if Wallet cannot be inited
+VERTICES_IMPORT ret_code_t
+vertices_wallet_init();
+
+/// Load Vertices SDK
+/// Load accounts from a saved wallet
+/// \return
+/// * VTC_SUCCESS on success
+/// * VTC_ERROR_INTERNAL if Wallet cannot be loaded
+VERTICES_IMPORT ret_code_t
+vertices_wallet_load(const char *pw);
+
+/// Save Vertices SDK
+/// Save accounts to a saved wallet
+/// \return
+/// * VTC_SUCCESS on success
+/// * VTC_ERROR_INTERNAL if Wallet cannot be saved
+VERTICES_IMPORT ret_code_t
+vertices_wallet_save(const char *pw);
+
 #ifdef __cplusplus
 }
 #endif

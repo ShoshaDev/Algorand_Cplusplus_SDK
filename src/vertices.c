@@ -279,4 +279,30 @@ vertices_new(vertex_t *config)
     m_vertices_evt_handler = config->vertices_evt_handler;
 
     return err_code;
- }
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_wallet_init()
+{
+    return account_init();
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_wallet_load(const char *pw)
+{
+    ret_code_t err_code;
+
+    err_code = account_init();
+    if (err_code != VTC_SUCCESS)
+    {
+        return err_code;
+    }
+
+    return account_load(pw);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_wallet_save(const char *pw)
+{
+    return account_save(pw);
+}

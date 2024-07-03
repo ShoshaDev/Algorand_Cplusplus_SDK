@@ -10,20 +10,11 @@
 #include "utils/base32.h"
 #include "account.h"
 
-#define ACCOUNTS_MAXIMUM_COUNT  2
+#define ACCOUNTS_MAXIMUM_COUNT  10
+#define SECRET_ACCOUNTS_MAXIMUM_COUNT  5
 
-enum account_status_e
-{
-    ACCOUNT_NONE = 0,
-    ACCOUNT_ADDED,
-};
-
-typedef struct local_accounts
-{
-    account_details_t account;
-    enum account_status_e status;
-} local_accounts_t;
 static local_accounts_t m_accounts[ACCOUNTS_MAXIMUM_COUNT] = {0};
+static s_account_t s_accounts[SECRET_ACCOUNTS_MAXIMUM_COUNT] = {0};
 
 static ret_code_t
 from_b32_init(size_t index, char *public_b32)
@@ -180,3 +171,25 @@ account_init()
 
     return VTC_SUCCESS;
 }
+
+ret_code_t
+account_load(const char *password) {
+    if (sodium_init() == -1) {
+        return VTC_ERROR_INTERNAL;
+    }
+
+    LOG_INFO("👛 Loading accounts from a wallet");
+    return load_account_data(WALLET_STORAGE_FILENAME, password, m_accounts, ACCOUNTS_MAXIMUM_COUNT);
+
+}
+
+ret_code_t
+account_save(const char *password) {
+    if (sodium_init() == -1) {
+        return VTC_ERROR_INTERNAL;
+    }
+
+    LOG_INFO("👛 Saving accounts to a wallet");
+    return save_account_data(WALLET_STORAGE_FILENAME, password, m_accounts, ACCOUNTS_MAXIMUM_COUNT);
+}
+

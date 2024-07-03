@@ -31,6 +31,9 @@
 // HTTP payload
 #define TX_PAYLOAD_MAX_LENGTH           (512+OPTIONAL_TX_FIELDS_MAX_SIZE_BYTES) ///< Encoded TX maximum length in bytes
 
+#ifndef RET_CODE_SUCCESS
+#define RET_CODE_SUCCESS(err_code)  if(err_code != VTC_SUCCESS) { return err_code; }
+#endif
 
 /// Asynchronous operations can be handled using Vertices events types
 typedef enum
@@ -63,6 +66,14 @@ typedef struct
     unsigned char public_key[ADDRESS_LENGTH];   //!< 32-bytes public key
     int32_t amount;                             //!< amount of tokens on account
 } account_info_t;
+
+/// We store anything related to the account into the below structure
+/// The private key is used outside of the Vertices library:
+///    you don't have to pass the private key to the SDK as signing is done outside
+typedef struct {
+    unsigned char private_key[ADDRESS_LENGTH];  //!< 32-bytes private key
+    account_info_t *vtc_account;               //!< pointer to Vertices account data
+} s_account_t;
 
 typedef enum
 {

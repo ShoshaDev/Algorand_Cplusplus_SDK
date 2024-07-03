@@ -7,9 +7,9 @@
 #ifndef C_VERTICES_SDK_SRC_ACCOUNT_H
 #define C_VERTICES_SDK_SRC_ACCOUNT_H
 
-#include <vertices_types.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "account_storage.h"
 
 typedef enum sig_type_e
 {
@@ -49,18 +49,30 @@ typedef struct
     account_info_t info; //!< Account generic infos: public keys and balance. ⚠️ Must be at the beginning of the structure as it will be casted to \c account_info_t.
     int32_t round; //!< The round for which this information is relevant.
     int32_t
-        rewards; //!< [ern] total rewards of MicroAlgos the account has received, including pending rewards.
+            rewards; //!< [ern] total rewards of MicroAlgos the account has received, including pending rewards.
     int32_t pending_rewards; //!< amount of MicroAlgos of pending rewards in this account.
     int32_t
-        reward_base; //!< [ebase] used as part of the rewards computation. Only applicable to accounts which are participating.
+            reward_base; //!< [ebase] used as part of the rewards computation. Only applicable to accounts which are participating.
     delegation_status_t
-        delegation_status; //!< string -> enum, [onl] - delegation status of the account's MicroAlgos
+            delegation_status; //!< string -> enum, [onl] - delegation status of the account's MicroAlgos
     sig_type_t
-        sig_type; //!< sig-type string -> enum - Indicates what type of signature is used by this account, must be one of:
+            sig_type; //!< sig-type string -> enum - Indicates what type of signature is used by this account, must be one of:
     account_participation_t participation;
     uint32_t app_idx;
     apps_local_state_t apps_local[APPS_MAX_COUNT];
 } account_details_t;
+
+enum account_status_e
+{
+    ACCOUNT_NONE = 0,
+    ACCOUNT_ADDED,
+};
+
+typedef struct local_accounts
+{
+    account_details_t account;
+    enum account_status_e status;
+} local_accounts_t;
 
 ret_code_t
 account_new(char *public_b32, account_info_t **account);
@@ -79,5 +91,11 @@ account_balance(account_info_t *account, int32_t *balance);
 
 ret_code_t
 account_init(void);
+
+ret_code_t
+account_load(const char *pw);
+
+ret_code_t
+account_save(const char *pw);
 
 #endif //C_VERTICES_SDK_SRC_ACCOUNT_H
