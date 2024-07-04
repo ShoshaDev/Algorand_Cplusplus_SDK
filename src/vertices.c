@@ -132,12 +132,13 @@ vertices_s_account_new_from_keys(char *public_key, char *private_key, s_account_
 VERTICES_EXPORT ret_code_t
 vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, const char *account_name) {
     ret_code_t err_code;
-    if(s_account_exists(account_name)) {
-        return VTC_SAME_MEM_EXIST;
-    }
 
     if(strlen(account_name) > ACCOUNT_NAME_LENGTH) {
         return VTC_ERROR_INVALID_PARAM;
+    }
+
+    if(s_account_exists(account_name)) {
+        return VTC_SAME_MEM_EXIST;
     }
 
     initialize_mnemonic();
@@ -158,6 +159,52 @@ vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, c
 
     return vertices_s_account_new_from_keys(ed25519_pk,  ed25519_sk, account, account_name);
 }
+
+VERTICES_EXPORT ret_code_t
+vertices_mnemonic_from_account(const char *account_name, char **mnemonic_str) {
+    ret_code_t err_code;
+    s_account_t account;
+
+    if(strlen(account_name) > ACCOUNT_NAME_LENGTH) {
+        return VTC_ERROR_INVALID_PARAM;
+    }
+
+    if(!s_account_exists(account_name)) {
+        return VTC_ERROR_NOT_FOUND;
+    }
+
+    account.vtc_account = (account_info_t *) malloc(sizeof(account_info_t));
+    memset(account.vtc_account, 0, sizeof(account_info_t));
+
+    err_code = s_account_get_by_name(&account, account_name);
+
+    RET_CODE_SUCCESS(err_code);
+
+    return vertices_mnemonic_from_sk(account.private_key, mnemonic_str);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_mnemonic_from_sk(unsigned char *sk, char **mnemonic_str) {
+    ret_code_t err_code;
+    bytes recovered_seed;
+
+    if(sodium_init() < 0) {
+        LOG_ERROR("Sodium Library cannot be inited");
+        return VTC_ERROR_INTERNAL;
+    }
+
+    recovered_seed.data = (unsigned char*)malloc(32 * sizeof(unsigned char));
+
+    initialize_mnemonic();
+    crypto_sign_ed25519_sk_to_seed(recovered_seed.data, sk);
+    recovered_seed.size = 32;
+
+    err_code = mnemonic_from_seed(recovered_seed, mnemonic_str);
+
+    return err_code;
+}
+
+
 
 VERTICES_EXPORT ret_code_t
 vertices_account_update(account_info_t *account)

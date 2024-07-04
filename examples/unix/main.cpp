@@ -286,6 +286,12 @@ main(int argc, char *argv[]) {
         VTC_ASSERT(err_code);
     }
 
+    // Test mnemonic from account
+    char *mnemonic;
+    err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
+    VTC_ASSERT(err_code);
+    printf("mnemonic string generated from account: %s\n", mnemonic);
+
     //  3) from b32 address
     //      Note: creating a receiver account is not mandatory to send money to the account
     //      but we can use it to load the public key from the account address

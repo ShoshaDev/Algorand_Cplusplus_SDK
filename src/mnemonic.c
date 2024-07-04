@@ -131,7 +131,7 @@ uint16_t checksum(bytes b) {
     return check_value;
 }
 
- ret_code_t mnemonic_from_seed(bytes seed, char *mnemonic) {
+ ret_code_t mnemonic_from_seed(bytes seed, char **mnemonic) {
     Uint16Vector encoded = b2048_encode(&seed);
 
     size_t mnemonic_len = 0;
@@ -140,14 +140,14 @@ uint16_t checksum(bytes b) {
     }
     mnemonic_len += strlen(word_vec.words[checksum(seed)]) + 1;
 
-    mnemonic = (char*)malloc(mnemonic_len);
-    mnemonic[0] = '\0';
+    *mnemonic = (char*)malloc(mnemonic_len);
+    *mnemonic[0] = '\0';
 
     for (size_t i = 0; i < encoded.size; ++i) {
-        strcat(mnemonic, word_vec.words[encoded.data[i]]);
-        strcat(mnemonic, " ");
+        strcat(*mnemonic, word_vec.words[encoded.data[i]]);
+        strcat(*mnemonic, " ");
     }
-    strcat(mnemonic, word_vec.words[checksum(seed)]);
+    strcat(*mnemonic, word_vec.words[checksum(seed)]);
 
     free_uint16_vector(&encoded);
 

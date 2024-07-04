@@ -274,7 +274,7 @@ s_account_exists(const char *account_name) {
     size_t i = 0;
     for (i = 0; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
     {
-        if (strcmp(s_accounts[i].name, account_name) && s_accounts[i].status == ACCOUNT_ADDED)
+        if (strcmp(s_accounts[i].name, account_name) == 0 && s_accounts[i].status == ACCOUNT_ADDED)
         {
             LOG_INFO("👛 Discovered secret account with the same name on wallet: #%s", s_accounts[i].vtc_account->public_b32);
             break;
@@ -293,7 +293,7 @@ s_account_get_by_name(s_account_t *account, const char *account_name) {
     size_t i = 0;
     for (i = 0; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
     {
-        if (strcmp(s_accounts[i].name, account_name) && s_accounts[i].status == ACCOUNT_ADDED)
+        if (strcmp(s_accounts[i].name, account_name) == 0 && s_accounts[i].status == ACCOUNT_ADDED)
         {
             LOG_INFO("👛 Discovered secret account with the same name on wallet: #%s", s_accounts[i].vtc_account->public_b32);
             break;
