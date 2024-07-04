@@ -6,12 +6,10 @@
 
 #include "utils/base32.h"
 
-#if defined _WIN32 || defined _WIN64
-#define BASE32_EXPORT __declspec(dllexport)
-#endif
-
-#ifndef BASE32_EXPORT
+#if defined APP_TYPE
 #define BASE32_EXPORT
+#elif defined _WIN32 || defined _WIN64
+#define BASE32_EXPORT __declspec(dllexport)
 #endif
 
 BASE32_EXPORT ret_code_t

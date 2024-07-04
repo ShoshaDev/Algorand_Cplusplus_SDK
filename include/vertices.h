@@ -12,20 +12,17 @@
 #include <stdio.h>
 #include "vertices_types.h"
 
-#if defined _WIN32 || defined _WIN64
+#if defined APP_TYPE
+#define VERTICES_IMPORT
+#elif defined _WIN32 || defined _WIN64
 #define VERTICES_IMPORT __declspec(dllimport)
 #elif defined __linux__
 #define VERTICES_IMPORT __attribute__((visibility("default")))
-#else
-#define VERTICES_IMPORT
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-VERTICES_IMPORT bool
-vertices_check_writable();
 
 VERTICES_IMPORT ret_code_t
 vertices_version(provider_version_t *version);
@@ -38,6 +35,18 @@ vertices_account_new_from_b32(char *public_b32, account_info_t **account);
 
 VERTICES_IMPORT ret_code_t
 vertices_account_new_from_bin(char *public_key, account_info_t **account);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_new_from_keys(char *public_key, char *private_key, s_account_t *account, const char *account_name);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, const char *account_name);
+
+VERTICES_IMPORT ret_code_t
+vertices_mnemonic_from_account(const char *account_name, char **mnemonic_str);
+
+VERTICES_IMPORT ret_code_t
+vertices_mnemonic_from_sk(unsigned char *sk, char **mnemonic_str);
 
 VERTICES_IMPORT ret_code_t
 vertices_account_update(account_info_t *account);
@@ -104,6 +113,48 @@ vertices_event_process(size_t *queue_size, unsigned char * txID);
 /// * VTC_ERROR_INTERNAL if HTTP client cannot be initialized
 VERTICES_IMPORT ret_code_t
 vertices_new(vertex_t *config);
+
+/// Init Wallet on Vertices SDK
+/// Init accounts
+/// \return
+/// * VTC_SUCCESS on success
+/// * VTC_ERROR_INTERNAL if Wallet cannot be inited
+VERTICES_IMPORT ret_code_t
+vertices_wallet_init();
+
+VERTICES_IMPORT bool
+vertices_wallet_exists();
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_get_by_name(s_account_t *account, const char *account_name);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_accounts_all_get(s_account_t **accounts);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_update(s_account_t **account);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_free(s_account_t **account);
+
+VERTICES_IMPORT ret_code_t
+vertices_wallet_free();
+
+/// Load Vertices SDK
+/// Load accounts from a saved wallet
+/// \return
+/// * VTC_SUCCESS on success
+/// * VTC_ERROR_INTERNAL if Wallet cannot be loaded
+VERTICES_IMPORT ret_code_t
+vertices_wallet_load(const char *pw);
+
+/// Save Vertices SDK
+/// Save accounts to a saved wallet
+/// \return
+/// * VTC_SUCCESS on success
+/// * VTC_ERROR_INTERNAL if Wallet cannot be saved
+VERTICES_IMPORT ret_code_t
+vertices_wallet_save(const char *pw);
 
 #ifdef __cplusplus
 }

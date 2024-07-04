@@ -9,7 +9,7 @@
 #include <transaction.h>
 #include <account.h>
 #include <string.h>
-#include <provider.h>
+#include "../include/provider.h"
 #include <mpack.h>
 #include <vertices_log.h>
 #include <vertices.h>

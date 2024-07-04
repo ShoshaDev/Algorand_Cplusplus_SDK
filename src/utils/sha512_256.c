@@ -8,12 +8,10 @@
 #include "utils/sha512_256.h"
 #include "mbedtls/sha512.h"
 
-#if defined _WIN32 || defined _WIN64
-#define SHA512_256_EXPORT __declspec(dllexport)
-#endif
-
-#ifndef SHA512_256_EXPORT
+#if defined APP_TYPE
 #define SHA512_256_EXPORT
+#elif defined _WIN32 || defined _WIN64
+#define SHA512_256_EXPORT __declspec(dllexport)
 #endif
 
 SHA512_256_EXPORT ret_code_t

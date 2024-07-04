@@ -5,10 +5,9 @@
  */
 
 #include "vertices_errors.h"
-#include <provider.h>
+#include "vertices_types.h"
 #include <curl/curl.h>
 #include <vertices_log.h>
-#include <string.h>
 
 static CURL *m_curl;
 static size_t
@@ -22,7 +21,6 @@ response_callback(void *chunk,
                   void *userdata)
 {
     return m_response_payload_cb((char *)chunk, size * nmemb);   // bug fixing
-//    return m_response_payload_cb((char *)chunk, size * nmemb);
 }
 
 ret_code_t
@@ -73,9 +71,9 @@ http_get(const provider_info_t *provider,
         curl_easy_setopt(m_curl, CURLOPT_URL, url_full);
         curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, NULL);
 
-#ifdef  WIN64
+// #ifdef  WIN64
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0);
-#endif
+// #endif
 
 #ifdef DEBUG
         curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L);
@@ -196,11 +194,12 @@ http_post(const provider_info_t *provider,
     return err_code;
 }
 
-void
+ret_code_t
 http_close()
 {
     curl_easy_cleanup(m_curl);
     curl_global_cleanup();
 
     m_curl = NULL;
+    return VTC_SUCCESS;
 }

@@ -1,5 +1,8 @@
+message(STATUS "Unix Example location: ${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(PROJECT_NAME unix_example)
 project(${PROJECT_NAME} C CXX)
+
 if (NOT MSVC)
     set (CMAKE_CXX_FLAGS "-std=c++11")
 endif()
@@ -23,8 +26,8 @@ if ($ENV{DOCKER_RUN})
     # so that we don't have to put money into Alice's account too often
     add_definitions("-DAMOUNT_SENT=100")
 else()
-    # Generic example sends 1 algo
-    add_definitions("-DAMOUNT_SENT=1000000")
+    # Generic example sends 100 micro algos
+    add_definitions("-DAMOUNT_SENT=100")
 endif()
 
 # lots of warnings and all warnings as errors

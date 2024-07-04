@@ -9,12 +9,12 @@
 
 #include "vertices_errors.h"
 
-#if defined _WIN32 || defined _WIN64
+#if defined APP_TYPE
+#define SHA512_256_IMPORT
+#elif defined _WIN32 || defined _WIN64
 #define SHA512_256_IMPORT __declspec(dllimport)
 #elif defined __linux__
 #define SHA512_256_IMPORT __attribute__((visibility("default")))
-#else
-#define SHA512_256_IMPORT
 #endif
 
 #ifdef __cplusplus

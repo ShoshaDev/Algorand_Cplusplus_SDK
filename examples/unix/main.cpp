@@ -9,9 +9,9 @@
 #include <unix_config.h>
 #include <cstring>
 #include <sodium.h>
-#include <getopt.h>
-#include "utils/base32.h"
 #include "utils/base64.h"
+#include "http_weak.h"
+#include "../vertices_ports/http_curl.cpp"
 
 typedef enum {
     PAY_TX = 0,
@@ -21,26 +21,14 @@ typedef enum {
 static ret_code_t
 vertices_evt_handler(vtc_evt_t *evt);
 
-static provider_info_t providers =
-        {.url = (char *) SERVER_URL, .port = SERVER_PORT, .header = (char *) SERVER_TOKEN_HEADER};
-
-/// We store anything related to the account into the below structure
-/// The private key is used outside of the Vertices library:
-///    you don't have to pass the private key to the SDK as signing is done outside
-typedef struct {
-    unsigned char private_key[ADDRESS_LENGTH];  //!< 32-bytes private key
-    account_info_t *vtc_account;               //!< pointer to Vertices account data
-} account_t;
+static provider_info_t providers;
 
 // Alice's account is used to send data, keys will be retrived from config/key_files.txt
-static account_t alice_account = {.private_key = {0}, .vtc_account = nullptr};
+static s_account_t alice_account;
 // Bob is receiving the money 😎
-static account_t bob_account = {.private_key = {0}, .vtc_account = nullptr};
+static s_account_t bob_account;
 
-static vertex_t m_vertex = {
-        .provider = &providers,
-        .vertices_evt_handler = vertices_evt_handler
-};
+static vertex_t m_vertex;
 
 static ret_code_t
 vertices_evt_handler(vtc_evt_t *evt) {
@@ -51,7 +39,7 @@ vertices_evt_handler(vtc_evt_t *evt) {
             signed_transaction_t *tx = nullptr;
             err_code = vertices_event_tx_get(evt->bufid, &tx);
             if (err_code == VTC_SUCCESS) {
-                LOG_DEBUG("About to sign tx: data length %lu", tx->payload_body_length);
+                LOG_DEBUG("About to sign tx: data length %zu", tx->payload_body_length);
 
                 // libsodium wants to have private and public keys concatenated
                 unsigned char keys[crypto_sign_ed25519_SECRETKEYBYTES] = {0};
@@ -61,7 +49,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
                        ADDRESS_LENGTH);
 
                 // prepend "TX" to the payload before signing
-                unsigned char to_be_signed[tx->payload_body_length + 2];
+                unsigned char *to_be_signed;
+                to_be_signed = (unsigned char*) malloc(tx->payload_body_length + 2);
+                memset(to_be_signed, 0, tx->payload_body_length + 2);
                 to_be_signed[0] = 'T';
                 to_be_signed[1] = 'X';
 
@@ -83,7 +73,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
                 LOG_DEBUG("Signature %s (%zu bytes)", b64_signature, b64_signature_len);
 
                 // send event to send the signed TX
-                vtc_evt_t sched_evt = {.type = VTC_EVT_TX_SENDING, .bufid = evt->bufid};
+                vtc_evt_t sched_evt;
+                sched_evt.type = VTC_EVT_TX_SENDING;
+                sched_evt.bufid = evt->bufid;
                 err_code = vertices_event_schedule(&sched_evt);
             }
         }
@@ -113,7 +105,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
             // the one-element map takes 4 bytes into our message packed payload <=> `txn`
             // we also add the `map` type before
             // which results in 5-bytes to be added before the payload at `payload_offset`
-            char payload[tx->payload_body_length + 5];
+            char *payload;
+            payload = (char *) malloc(tx->payload_body_length + 5);
+            memset(payload, 0, tx->payload_body_length + 5);
             payload[0] = (char) 0x81; // starting flag for map of one element
             memcpy(&payload[1],
                    &tx->payload[tx->payload_header_length - 4],
@@ -235,33 +229,21 @@ int
 main(int argc, char *argv[]) {
     ret_code_t err_code;
 
-    bool create_new = true;                // bug fixing convert false to tru at first.
     tx_type_t run_tx = PAY_TX;
 
-    int opt;
-    while ((opt = getopt(argc, argv, "npa")) != -1) {
-        switch (opt) {
-            case 'n': {
-                create_new = true;
-            }
-                break;
-            case 'p': {
-                run_tx = PAY_TX;
-            }
-                break;
-            case 'a': {
-                run_tx = APP_CALL_TX;
-            }
-                break;
+    // Init providers
+    providers.url = (char *) SERVER_URL;
+    providers.port = SERVER_PORT;
+    providers.header = (char *) SERVER_TOKEN_HEADER;
 
-            default: {
-                fprintf(stderr,
-                        "Usage:\n%s [-p|-a] [-n] \nSend signed transaction on the blockchain.\n-p (default)\tSend [p]ayment (Alice sends tokens to Bob)\n-a\t\t\t\tSend [a]pplication call (Alice sends integer value to application)\n-n\t\t\t\tCreate [n]ew account",
-                        argv[0]);
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+    m_vertex.provider = &providers;
+    m_vertex.vertices_evt_handler = vertices_evt_handler;
+
+    // Init Accounts Alice & Bob
+    memset(alice_account.private_key, 0, ADDRESS_LENGTH);
+    alice_account.vtc_account = nullptr;
+    memset(bob_account.private_key, 0, ADDRESS_LENGTH);
+    bob_account.vtc_account = nullptr;
 
     LOG_INFO("😎 Vertices SDK running on Unix-based OS");
 
@@ -271,6 +253,11 @@ main(int argc, char *argv[]) {
     // create new vertex
     err_code = vertices_new(&m_vertex);
     VTC_ASSERT(err_code);
+
+    err_code = vertices_wallet_load((const char *) WALLET_PASSWORD);
+    if(err_code != VTC_SUCCESS) {
+        LOG_WARNING("😎 Vertices SDK Wallet can't be loaded");
+    }
 
     // making sure the provider is accessible
     err_code = vertices_ping();
@@ -291,21 +278,28 @@ main(int argc, char *argv[]) {
              version.minor,
              version.patch);
 
-    // Several ways to create/load accounts:
-    if (create_new) {
-        // 1) create new one
-        err_code = create_new_account();
-        VTC_ASSERT(err_code);
-    } else {
-        // 2) from files
-        err_code = load_existing_account();
+    err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ACCOUNT_NAME);
+    if(err_code == VTC_ERROR_NOT_FOUND) {
+        // Create a new secret account called alice's one
+        char *mnemonic_str = "base\ngiraffe\nbelieve\nmake\ntone\ntransfer\nwrap\nattend\ntypical\ndirt\ngrocery\ndistance\noutside\nhorn\nalso\nabstract\nslim\necology\nisland\nalter\ndaring\nequal\nboil\nabsent\ncarpet\n";
+        err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
         VTC_ASSERT(err_code);
     }
+
+    // Test mnemonic from account
+    char *mnemonic;
+    err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
+    VTC_ASSERT(err_code);
+    printf("mnemonic string generated from account: %s\n", mnemonic);
 
     //  3) from b32 address
     //      Note: creating a receiver account is not mandatory to send money to the account
     //      but we can use it to load the public key from the account address
     err_code = vertices_account_new_from_b32((char *) ACCOUNT_RECEIVER, &bob_account.vtc_account);
+
+    if(err_code == VTC_ERROR_NO_MEM) {
+        err_code = vertices_wallet_init();
+    }
     VTC_ASSERT(err_code);
 
     LOG_INFO("🤑 %f Algos on Alice's account (%s)",
@@ -327,7 +321,7 @@ main(int argc, char *argv[]) {
             char *notes = (char *) "Alice sent 1 Algo to Bob";
             err_code =
                     vertices_transaction_pay_new(alice_account.vtc_account,
-                                                 (char *) bob_account.vtc_account->public_b32 /* or ACCOUNT_RECEIVER */,
+                                                 (char *) bob_account.vtc_account->public_key /* or ACCOUNT_RECEIVER Public Key */,
                                                  AMOUNT_SENT,
                                                  notes);
             VTC_ASSERT(err_code);
@@ -379,9 +373,11 @@ main(int argc, char *argv[]) {
         LOG_INFO("👉 Haha This is transaction ID: %s",txID);
     }
 
+    vertices_wallet_save((const char*) WALLET_PASSWORD);
+
     free(txID);
-    // delete the created accounts from the Vertices wallet
-    err_code = vertices_account_free(alice_account.vtc_account);
+    // delete the created secret accounts from the Vertices wallet
+    err_code = vertices_wallet_free();
     VTC_ASSERT(err_code);
 
     err_code = vertices_account_free(bob_account.vtc_account);

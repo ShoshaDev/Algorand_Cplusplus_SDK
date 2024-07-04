@@ -8,12 +8,10 @@
 
 #include <stdint.h>
 
-#if defined _WIN32 || defined _WIN64
-#define BASE64_EXPORT __declspec(dllexport)
-#endif
-
-#ifndef BASE64_EXPORT
+#if defined APP_TYPE
 #define BASE64_EXPORT
+#elif defined _WIN32 || defined _WIN64
+#define BASE64_EXPORT __declspec(dllexport)
 #endif
 
 // based on https://opensource.apple.com/source/QuickTimeStreamingServer/QuickTimeStreamingServer-452/CommonUtilitiesLib/base64.c
