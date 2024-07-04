@@ -229,8 +229,6 @@ int
 main(int argc, char *argv[]) {
     ret_code_t err_code;
 
-    bool create_new = false;                // bug fixing convert false to tru at first.
-    bool mnemonic_allow = true;
     tx_type_t run_tx = PAY_TX;
 
     // Init providers
@@ -280,29 +278,18 @@ main(int argc, char *argv[]) {
              version.minor,
              version.patch);
 
-    // Several ways to create/load accounts:
-    //  if (create_new) {
-//        // 1) create new one
-//        err_code = create_new_account();
-//        VTC_ASSERT(err_code);
-//    } else {
-//        // 2) from files
-//        err_code = load_existing_account();
-//        VTC_ASSERT(err_code);
-//    }
-
-    if(!mnemonic_allow)
-    {
-        //  3) from b32 address
-        //      Note: creating a receiver account is not mandatory to send money to the account
-        //      but we can use it to load the public key from the account address
-        err_code = vertices_account_new_from_b32((char *) ACCOUNT_RECEIVER, &bob_account.vtc_account);
-    } else
-    {
-        // 3) from mnemonic phrase
+    err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ACCOUNT_NAME);
+    if(err_code == VTC_ERROR_NOT_FOUND) {
+        // Create a new secret account called alice's one
         char *mnemonic_str = "base\ngiraffe\nbelieve\nmake\ntone\ntransfer\nwrap\nattend\ntypical\ndirt\ngrocery\ndistance\noutside\nhorn\nalso\nabstract\nslim\necology\nisland\nalter\ndaring\nequal\nboil\nabsent\ncarpet\n";
-        err_code = vertices_account_new_from_mnemonic(mnemonic_str, &bob_account.vtc_account);
+        err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
+        VTC_ASSERT(err_code);
     }
+
+    //  3) from b32 address
+    //      Note: creating a receiver account is not mandatory to send money to the account
+    //      but we can use it to load the public key from the account address
+    err_code = vertices_account_new_from_b32((char *) ACCOUNT_RECEIVER, &bob_account.vtc_account);
 
     if(err_code == VTC_ERROR_NO_MEM) {
         err_code = vertices_wallet_init();
@@ -383,8 +370,8 @@ main(int argc, char *argv[]) {
     vertices_wallet_save((const char*) WALLET_PASSWORD);
 
     free(txID);
-    // delete the created accounts from the Vertices wallet
-    err_code = vertices_account_free(alice_account.vtc_account);
+    // delete the created secret accounts from the Vertices wallet
+    err_code = vertices_wallet_free();
     VTC_ASSERT(err_code);
 
     err_code = vertices_account_free(bob_account.vtc_account);

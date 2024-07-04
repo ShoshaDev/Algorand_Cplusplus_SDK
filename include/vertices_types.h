@@ -20,6 +20,7 @@
 // addresses
 #define ADDRESS_LENGTH                  32
 #define PUBLIC_B32_STR_MAX_LENGTH       65
+#define ACCOUNT_NAME_LENGTH             20
 
 // transaction
 #define SIGNATURE_LENGTH                64
@@ -67,12 +68,20 @@ typedef struct
     int32_t amount;                             //!< amount of tokens on account
 } account_info_t;
 
+enum account_status_e
+{
+    ACCOUNT_NONE = 0,
+    ACCOUNT_ADDED,
+};
+
 /// We store anything related to the account into the below structure
 /// The private key is used outside of the Vertices library:
 ///    you don't have to pass the private key to the SDK as signing is done outside
 typedef struct {
     unsigned char private_key[ADDRESS_LENGTH];  //!< 32-bytes private key
     account_info_t *vtc_account;               //!< pointer to Vertices account data
+    enum account_status_e status;
+    char name[ACCOUNT_NAME_LENGTH];
 } s_account_t;
 
 typedef enum

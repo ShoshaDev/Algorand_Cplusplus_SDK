@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "vertices_types.h"
+
 typedef struct {
     unsigned char* data;
     size_t size;
@@ -23,7 +25,7 @@ typedef struct {
 } WordMap;
 
 void initialize_mnemonic();
-char* mnemonic_from_seed(bytes seed);
-bytes seed_from_mnemonic(const char* mnemonic);
+ret_code_t mnemonic_from_seed(bytes seed, char* mnemonic);
+ret_code_t seed_from_mnemonic(const char* mnemonic, bytes *seed);
 
 #endif // MNEMONIC_H

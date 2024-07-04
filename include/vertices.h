@@ -37,7 +37,10 @@ VERTICES_IMPORT ret_code_t
 vertices_account_new_from_bin(char *public_key, account_info_t **account);
 
 VERTICES_IMPORT ret_code_t
-vertices_account_new_from_mnemonic(char *mnemonic_str, account_info_t **account);
+vertices_s_account_new_from_keys(char *public_key, char *private_key, s_account_t *account, const char *account_name);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, const char *account_name);
 
 VERTICES_IMPORT ret_code_t
 vertices_account_update(account_info_t *account);
@@ -112,6 +115,24 @@ vertices_new(vertex_t *config);
 /// * VTC_ERROR_INTERNAL if Wallet cannot be inited
 VERTICES_IMPORT ret_code_t
 vertices_wallet_init();
+
+VERTICES_IMPORT bool
+vertices_wallet_exists();
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_get_by_name(s_account_t *account, const char *account_name);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_accounts_all_get(s_account_t **accounts);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_update(s_account_t **account);
+
+VERTICES_IMPORT ret_code_t
+vertices_s_account_free(s_account_t **account);
+
+VERTICES_IMPORT ret_code_t
+vertices_wallet_free();
 
 /// Load Vertices SDK
 /// Load accounts from a saved wallet

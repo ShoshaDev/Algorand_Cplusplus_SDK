@@ -62,12 +62,6 @@ typedef struct
     apps_local_state_t apps_local[APPS_MAX_COUNT];
 } account_details_t;
 
-enum account_status_e
-{
-    ACCOUNT_NONE = 0,
-    ACCOUNT_ADDED,
-};
-
 typedef struct local_accounts
 {
     account_details_t account;
@@ -83,19 +77,47 @@ account_free(account_info_t *account);
 ret_code_t
 account_update(account_info_t *account);
 
+ret_code_t
+account_init(void);
+
 bool
 account_has_app(account_info_t *account, uint64_t app_id);
 
 ret_code_t
 account_balance(account_info_t *account, int32_t *balance);
 
+// function group for secret accounts
 ret_code_t
-account_init(void);
+s_account_new(char *public_b32, char *private_key, s_account_t *account, const char *account_name);
 
 ret_code_t
-account_load(const char *pw);
+s_account_get_by_name(s_account_t *account, const char *account_name);
 
 ret_code_t
-account_save(const char *pw);
+s_accounts_all_get(s_account_t **accounts);
+
+ret_code_t
+s_account_update(s_account_t **account);
+
+ret_code_t
+s_account_init(void);
+
+bool
+s_account_exists(const char *account_name);
+
+bool
+s_wallet_exists(void);
+
+ret_code_t
+s_account_load(const char *pw);
+
+ret_code_t
+s_account_save(const char *pw);
+
+ret_code_t
+s_account_free(s_account_t **account);
+
+ret_code_t
+s_wallet_free(void);
 
 #endif //C_VERTICES_SDK_SRC_ACCOUNT_H

@@ -98,29 +98,77 @@ vertices_account_new_from_bin(char *public_key, account_info_t **account)
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_account_new_from_mnemonic(char *mnemonic_str, account_info_t **account) {
+vertices_s_account_new_from_keys(char *public_key, char *private_key, s_account_t *account, const char *account_name)
+{
+    VTC_ASSERT_BOOL(public_key != 0);
+    VTC_ASSERT_BOOL(account != 0);
+
+    ret_code_t err_code;
+
+    unsigned char checksum[32] = {0};
+    char public_key_checksum[36] = {0};
+    char public_b32[PUBLIC_B32_STR_MAX_LENGTH] = {0};
+
+    memcpy(public_key_checksum, public_key, sizeof(account->vtc_account->public_key));
+
+    err_code = sha512_256((const unsigned char *) public_key,
+                          ADDRESS_LENGTH,
+                          checksum,
+                          sizeof(checksum));
+    VTC_ASSERT(err_code);
+
+    memcpy(&public_key_checksum[32], &checksum[32 - 4], 4);
+
+    size_t size = 58;
+    err_code = b32_encode((const char *) public_key_checksum,
+                          sizeof(public_key_checksum),
+                          public_b32,
+                          &size);
+    VTC_ASSERT(err_code);
+
+    return s_account_new(public_b32, private_key, account, account_name);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, const char *account_name) {
+    ret_code_t err_code;
+    if(s_account_exists(account_name)) {
+        return VTC_SAME_MEM_EXIST;
+    }
+
+    if(strlen(account_name) > ACCOUNT_NAME_LENGTH) {
+        return VTC_ERROR_INVALID_PARAM;
+    }
+
     initialize_mnemonic();
-    bytes recovered_seed = seed_from_mnemonic(mnemonic_str);
-    
-    assert(sodium_init() >= 0);
+    bytes recovered_seed;
+    err_code = seed_from_mnemonic(mnemonic_str, &recovered_seed);
+
+    RET_CODE_SUCCESS(err_code);
+
+    if(sodium_init() < 0) {
+        LOG_ERROR("Sodium Library cannot be inited");
+        return VTC_ERROR_INTERNAL;
+    }
+
     unsigned char ed25519_pk[crypto_sign_ed25519_PUBLICKEYBYTES];
     unsigned char ed25519_sk[crypto_sign_ed25519_SECRETKEYBYTES];
 
     crypto_sign_ed25519_seed_keypair(ed25519_pk, ed25519_sk, recovered_seed.data);
 
-    return vertices_account_new_from_bin(ed25519_pk, account);
-}
-
-VERTICES_EXPORT ret_code_t
-vertices_account_free(account_info_t *account)
-{
-    return account_free(account);
+    return vertices_s_account_new_from_keys(ed25519_pk,  ed25519_sk, account, account_name);
 }
 
 VERTICES_EXPORT ret_code_t
 vertices_account_update(account_info_t *account)
 {
     return account_update(account);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_account_free(account_info_t *account)
+{
+    return account_free(account);
 }
 
 VERTICES_EXPORT ret_code_t
@@ -271,10 +319,10 @@ vertices_new(vertex_t *config)
     }
 
     err_code = account_init();
-    if (err_code != VTC_SUCCESS)
-    {
-        return err_code;
-    }
+    RET_CODE_SUCCESS(err_code);
+
+    err_code = s_account_init();
+    RET_CODE_SUCCESS(err_code);
 
     m_vertices_evt_handler = config->vertices_evt_handler;
 
@@ -284,7 +332,31 @@ vertices_new(vertex_t *config)
 VERTICES_EXPORT ret_code_t
 vertices_wallet_init()
 {
-    return account_init();
+    return s_account_init();
+}
+
+VERTICES_EXPORT bool
+vertices_wallet_exists()
+{
+    return s_wallet_exists();
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_s_account_get_by_name(s_account_t *account, const char *account_name)
+{
+    return s_account_get_by_name(account, account_name);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_s_accounts_all_gets(s_account_t **accounts)
+{
+    return s_accounts_all_get(accounts);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_s_account_update(s_account_t **account)
+{
+    return s_account_update(account);
 }
 
 VERTICES_EXPORT ret_code_t
@@ -292,17 +364,26 @@ vertices_wallet_load(const char *pw)
 {
     ret_code_t err_code;
 
-    err_code = account_init();
-    if (err_code != VTC_SUCCESS)
-    {
-        return err_code;
-    }
+    err_code = s_account_init();
+    RET_CODE_SUCCESS(err_code);
 
-    return account_load(pw);
+    return s_account_load(pw);
 }
 
 VERTICES_EXPORT ret_code_t
 vertices_wallet_save(const char *pw)
 {
-    return account_save(pw);
+    return s_account_save(pw);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_s_account_free(s_account_t **account)
+{
+    return s_account_free(account);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_wallet_free()
+{
+    return s_wallet_free();
 }
