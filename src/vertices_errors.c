@@ -9,8 +9,6 @@
 #include "vertices_errors.h"
 #include "compilers.h"
 
-#define APP_TYPE UNIX_EXAMPLE
-
 #if defined APP_TYPE
 #define APPERROR_EXPORT
 #elif defined _WIN32 || defined _WIN64

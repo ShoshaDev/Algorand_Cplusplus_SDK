@@ -20,6 +20,11 @@
 #define TESTNET_PURESTAKE_API               "https://testnet-algorand.api.purestake.io/ps2"
 #define TESTNET_LOCAL_API                   "localhost"
 
+#define TESTNET_ALGONODE_INDEXER_API                "https://testnet-idx.algonode.network"
+#define TESTNET_ALGOEXPLORER_INDEXER_API            "https://node.testnet.algoexplorerapi.io"
+#define TESTNET_PURESTAKE_INDEXER_API               "https://testnet-algorand.api.purestake.io/idx2"
+#define TESTNET_LOCAL_INDEXER_API                   "localhost"
+
 #define TESTNET_ALGONODE_PORT           443
 #define TESTNET_ALGOEXPLORER_PORT       0
 #define TESTNET_PURESTAKE_PORT          0

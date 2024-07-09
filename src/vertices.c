@@ -15,8 +15,6 @@
 #include "vertices.h"
 #include <sodium.h>
 
-#define APP_TYPE UNIX_EXAMPLE
-
 #if defined APP_TYPE
 #define VERTICES_EXPORT
 #elif defined _WIN32 || defined _WIN64
