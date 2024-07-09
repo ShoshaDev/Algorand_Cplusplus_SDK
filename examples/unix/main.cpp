@@ -232,7 +232,8 @@ main(int argc, char *argv[]) {
     tx_type_t run_tx = PAY_TX;
 
     // Init providers
-    providers.url = (char *) SERVER_URL;
+    providers.algod_url = (char *) SERVER_NODE_URL;
+    providers.indexer_url = (char *) SERVER_INDEXER_URL;
     providers.port = SERVER_PORT;
     providers.header = (char *) SERVER_TOKEN_HEADER;
 

@@ -355,7 +355,7 @@ provider_init(provider_info_t *provider)
 {
     memset(&m_provider.version, 0, sizeof m_provider.version);
 
-    m_provider.provider.url = provider->url;
+    m_provider.provider.algod_url = provider->algod_url;
     m_provider.provider.port = provider->port;
     m_provider.provider.header = provider->header;
     m_provider.provider.cert_pem = provider->cert_pem;
