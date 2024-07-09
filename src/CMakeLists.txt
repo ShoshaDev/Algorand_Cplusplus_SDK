@@ -42,6 +42,22 @@ if( NOT DEFINED VERTICES_TYPE )
     set(VERTICES_TYPE "SHARED")
 endif()
 
+if( ${VERTICES_TYPE} STREQUAL "SHARED" )
+    set(UNREAL_SDK_PROJECT "unreal-algorand-demo")
+    set(HEADER_FILES_TO_COPY
+            "../include/vertices.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices.h"
+            "../include/vertices_config.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_config.h"
+            "../include/vertices_errors.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_errors.h"
+            "../include/vertices_http.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_http.h"
+            "../include/vertices_types.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_types.h"
+            "include/vertices_log.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices_log.h"
+            "include/utils/base32.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base32.h"
+            "include/utils/base64.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base64.h"
+            "include/utils/base2048.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base2048.h"
+            "include/utils/sha512_256.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/sha512_256.h"
+    )
+endif ()
+
 if (COMPILE_UNIX)
     add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
@@ -60,16 +76,38 @@ if (COMPILE_UNIX)
 
     if( ${VERTICES_TYPE} STREQUAL SHARED )
         #copy vertices library to vs 2019 unreal plugin
-        add_custom_command(TARGET vertices  POST_BUILD
+        add_custom_command(TARGET vertices POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_BINARY_DIR}/bin
-                ${CMAKE_BINARY_DIR}/../../unreal-algorand-demo/Plugins/Algorand/Binaries/ThirdParty/AlgorandLibrary/Win64
+                ${CMAKE_BINARY_DIR}/../../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Binaries/ThirdParty/AlgorandLibrary/Win64
+                COMMENT "Copying vertices.dll from cmake_bin folder to ue binary one"
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_BINARY_DIR}/lib
-                ${CMAKE_BINARY_DIR}/../../unreal-algorand-demo/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
+                ${CMAKE_BINARY_DIR}/../../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
+                COMMENT "Copying vertices.lib from cmake_bin folder to ue 3rd-party release one"
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_BINARY_DIR}/bin
-                ${CMAKE_BINARY_DIR}/../../unreal-algorand-demo/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release)
+                ${CMAKE_BINARY_DIR}/../../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
+                COMMENT "Copying vertices.dll from cmake_bin folder to ue 3rd-party release one")
+
+        foreach(file_pair ${HEADER_FILES_TO_COPY})
+            string(REPLACE "->" ";" file_pair_split ${file_pair})
+            list(LENGTH file_pair_split num_pair_list)
+
+            # Validate the pair split correctly into exactly 2 items
+            if(num_pair_list EQUAL 2)
+                list(GET file_pair_split 0 src_file)
+                list(GET file_pair_split 1 dest_file)
+
+                add_custom_command(
+                        TARGET vertices POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy
+                        ${CMAKE_CURRENT_SOURCE_DIR}/${src_file}
+                        ${CMAKE_SOURCE_DIR}/${dest_file}
+                        COMMENT "Copying ${src_file} to ${dest_file}"
+                )
+            endif ()
+        endforeach()
     endif()
 
     target_include_directories(vertices
