@@ -57,12 +57,15 @@ if(MSVC OR MSYS OR MINGW)
     set(libcurl_INCLUDE_DIRS "C:/libcurl-7.85/include")
     include_directories(${libcurl_INCLUDE_DIRS})
 
-    set(libsodium_INCLUDE_DIRS "C:/libsodium-1.0.17/include")
+    set(libsodium_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/sodium/include")
     include_directories(${libsodium_INCLUDE_DIRS})
+
+    add_library( sodium STATIC IMPORTED )
+    set_target_properties( sodium PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/sodium/x64/libsodium.lib )
 
     include_directories(${INC_FOLDERS})
     add_executable(${PROJECT_NAME} ${SRC_FILES})
-    target_link_libraries(${PROJECT_NAME} C:/libsodium-1.0.17/lib/libsodium.dll.a C:/libcurl-7.85/lib/libcurl.dll.a vertices)
+    target_link_libraries(${PROJECT_NAME} sodium C:/libcurl-7.85/lib/libcurl.dll.a vertices)
 elseif(UNIX AND NOT APPLE)
     # Find cURL
     find_package(CURL)

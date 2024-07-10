@@ -1,12 +1,12 @@
 //
-// Created by Conan Exiles on 7/3/2024.
+// Created by Bruno on 7/3/2024.
 //
 
 #ifndef VERTICES_SDK_SECRETBOX_H
 #define VERTICES_SDK_SECRETBOX_H
 
 #include <sodium.h>
-#include "vertices_types.h"
+#include "vertices_errors.h"
 
 #define KEY_SIZE crypto_secretbox_KEYBYTES
 #define NONCE_SIZE crypto_secretbox_NONCEBYTES

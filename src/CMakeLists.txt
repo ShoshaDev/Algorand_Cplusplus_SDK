@@ -108,6 +108,16 @@ if (COMPILE_UNIX)
                 )
             endif ()
         endforeach()
+
+        add_custom_command(TARGET vertices POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_BINARY_DIR}/bin
+                ${CMAKE_BINARY_DIR}/../../walletStorage/dll
+                COMMENT "Copying vertices.dll from cmake_bin folder to wallet storage one"
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_BINARY_DIR}/lib
+                ${CMAKE_BINARY_DIR}/../../walletStorage/dll
+                COMMENT "Copying vertices.lib from cmake_bin folder to ue wallet storage release one")
     endif()
 
     target_include_directories(vertices
@@ -135,10 +145,12 @@ if (COMPILE_UNIX)
 
     if( ${BUILT_TARGET} STREQUAL vertices )
         if(MSVC OR MSYS OR MINGW)
-            set(libsodium_INCLUDE_DIRS "C:/libsodium-1.0.17/include")
+            set(libsodium_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/sodium/include")
             include_directories(${libsodium_INCLUDE_DIRS})
 
-            target_link_libraries(vertices cjson mbedcrypto C:/libsodium-1.0.17/lib/libsodium.dll.a)
+            add_library( sodium STATIC IMPORTED )
+            set_target_properties( sodium PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/sodium/x64/libsodium.lib )
+            target_link_libraries(vertices cjson mbedcrypto sodium)
         elseif(UNIX AND NOT APPLE)
             target_link_libraries(vertices cjson mbedcrypto)
             target_compile_options(vertices PRIVATE -pedantic -Wall -Wstrict-prototypes -Wwrite-strings -Wshadow -Winit-self -Wformat=2 -Wmissing-prototypes -Wstrict-overflow=2 -Wc++-compat -Wundef -Wconversion -Wno-missing-braces)
