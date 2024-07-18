@@ -159,6 +159,33 @@ vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, c
 }
 
 VERTICES_EXPORT ret_code_t
+vertices_s_account_new_random(s_account_t *account, const char *account_name) {
+    ret_code_t err_code;
+
+    if(strlen(account_name) > ACCOUNT_NAME_LENGTH) {
+        return VTC_ERROR_INVALID_PARAM;
+    }
+
+    if(s_account_exists(account_name)) {
+        return VTC_SAME_MEM_EXIST;
+    }
+
+    if(sodium_init() < 0) {
+        LOG_ERROR("Sodium Library cannot be inited");
+        return VTC_ERROR_INTERNAL;
+    }
+
+    unsigned char seed[crypto_sign_ed25519_SEEDBYTES] = {0};
+    unsigned char ed25519_pk[crypto_sign_ed25519_PUBLICKEYBYTES];
+    unsigned char ed25519_sk[crypto_sign_ed25519_SECRETKEYBYTES];
+    randombytes_buf(seed, sizeof(seed));
+
+    crypto_sign_ed25519_seed_keypair(ed25519_pk, ed25519_sk, seed);
+
+    return vertices_s_account_new_from_keys(ed25519_pk,  ed25519_sk, account, account_name);
+}
+
+VERTICES_EXPORT ret_code_t
 vertices_mnemonic_from_account(const char *account_name, char **mnemonic_str) {
     ret_code_t err_code;
     s_account_t account;

@@ -230,6 +230,7 @@ main(int argc, char *argv[]) {
     ret_code_t err_code;
 
     tx_type_t run_tx = PAY_TX;
+    bool create_new = false;
 
     // Init providers
     providers.algod_url = (char *) SERVER_NODE_URL;
@@ -282,9 +283,14 @@ main(int argc, char *argv[]) {
     err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ACCOUNT_NAME);
     if(err_code == VTC_ERROR_NOT_FOUND) {
         // Create a new secret account called alice's one
-        char *mnemonic_str = "base\ngiraffe\nbelieve\nmake\ntone\ntransfer\nwrap\nattend\ntypical\ndirt\ngrocery\ndistance\noutside\nhorn\nalso\nabstract\nslim\necology\nisland\nalter\ndaring\nequal\nboil\nabsent\ncarpet\n";
-        err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
-        VTC_ASSERT(err_code);
+        if(create_new) {
+            err_code = vertices_s_account_new_random(&alice_account, (const char*) ACCOUNT_NAME);
+            VTC_ASSERT(err_code);
+        } else {
+            char *mnemonic_str = "rally relief lucky maple primary chair syrup economy tired hurdle slot upset clever chest curve bitter weekend prepare movie letter lamp alert then able taste";  // base giraffe believe make tone transfer wrap attend typical dirt grocery distance outside horn also abstract slim ecology island alter daring equal boil absent carpet
+            err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
+            VTC_ASSERT(err_code);
+        }
     }
 
     // Test mnemonic from account
