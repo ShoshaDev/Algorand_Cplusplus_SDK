@@ -60,4 +60,7 @@ provider_ping(void);
 ret_code_t
 provider_init(provider_info_t *provider);
 
+ret_code_t
+provider_close(provider_info_t *provider);
+
 #endif //VERTICES_SRC_PROVIDER_H

@@ -17,7 +17,10 @@
 static size_t
 response_payload_callback(char *chunk, size_t size);
 
-static char rx_buf[HTTP_MAXIMUM_CONTENT_LENGTH];
+//static char rx_buf[HTTP_MAXIMUM_CONTENT_LENGTH];
+static char *rx_buf = NULL;
+static size_t rx_buf_size = 0;
+
 static provider_t m_provider = {0};
 
 static size_t
@@ -26,7 +29,12 @@ response_payload_callback(char *chunk, size_t size)
     unsigned int _size = (unsigned int)size;
     LOG_DEBUG("Received %u bytes", _size);      // bug fixing
 
-    VTC_ASSERT_BOOL(size < HTTP_MAXIMUM_CONTENT_LENGTH);
+    if (m_provider.response_buffer.size + size >= rx_buf_size) {
+        rx_buf_size *= 2;
+        rx_buf = realloc(rx_buf, rx_buf_size);
+        VTC_ASSERT_BOOL(rx_buf != NULL);
+        m_provider.response_buffer.data = rx_buf;
+    }
 
     memcpy(&m_provider.response_buffer.data[m_provider.response_buffer.size], chunk, size);
     m_provider.response_buffer.size += size;
@@ -355,6 +363,13 @@ provider_init(provider_info_t *provider)
 {
     memset(&m_provider.version, 0, sizeof m_provider.version);
 
+    rx_buf_size = HTTP_MAXIMUM_CONTENT_LENGTH;
+    rx_buf = malloc(rx_buf_size);
+    if (!rx_buf) {
+        LOG_ERROR("rx_buf: Failed to allocate memory");
+        return VTC_ERROR_INTERNAL;
+    }
+
     m_provider.provider.algod_url = provider->algod_url;
     m_provider.provider.port = provider->port;
     m_provider.provider.header = provider->header;
@@ -367,3 +382,14 @@ provider_init(provider_info_t *provider)
     ret_code_t err_code = http_init(&m_provider.provider, response_payload_callback);
     return err_code;
 }
+
+ret_code_t
+provider_close(provider_info_t *provider) {
+    if(rx_buf) {
+        free(rx_buf);
+        rx_buf = NULL;
+    }
+
+    return VTC_SUCCESS;
+}
+

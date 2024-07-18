@@ -6,6 +6,10 @@
 
 #include "vertices_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     unsigned char* data;
     size_t size;
@@ -28,4 +32,7 @@ void initialize_mnemonic();
 ret_code_t mnemonic_from_seed(bytes seed, char** mnemonic);
 ret_code_t seed_from_mnemonic(const char* mnemonic, bytes *seed);
 
+#ifdef __cplusplus
+}
+#endif
 #endif // MNEMONIC_H
