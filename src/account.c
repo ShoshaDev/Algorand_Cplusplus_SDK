@@ -195,6 +195,8 @@ s_account_new(char *public_b32, char *private_key,  s_account_t *account, const 
         return VTC_ERROR_NO_MEM;
     }
 
+    s_accounts[i].vtc_account = (account_info_t *) malloc(sizeof (account_info_t));
+
     err_code = from_b32_init(i, public_b32, s_accounts[i].vtc_account);
     VTC_ASSERT(err_code);
 
@@ -313,6 +315,7 @@ s_account_get_by_name(s_account_t *account, const char *account_name) {
 
 ret_code_t
 s_accounts_all_get(s_account_t **accounts) {
+//    memcpy(*accounts, s_accounts, sizeof(s_accounts) * 5);
     *accounts = s_accounts;
 
     return VTC_SUCCESS;
@@ -333,7 +336,7 @@ s_account_update(s_account_t **account) {
         memcpy((*account)->vtc_account,
                &accountDetails.info,
                sizeof(account_info_t));
-        return VTC_SUCCESS;
+        return err_code;
     }
     else
     {
@@ -363,11 +366,11 @@ s_account_save(const char *password) {
 }
 
 ret_code_t
-s_account_free(s_account_t **account) {
+s_account_free(const char *account_name) {
     uint32_t i = 0;
     for (; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
     {
-        if (*account == (s_account_t *) &s_accounts[i])
+        if (strcmp(account_name, s_accounts[i].name) == 0)
         {
             s_accounts[i].status = ACCOUNT_NONE;
             memset(&s_accounts[i], 0, sizeof(s_account_t));

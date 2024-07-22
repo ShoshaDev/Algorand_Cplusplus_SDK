@@ -260,6 +260,28 @@ main(int argc, char *argv[]) {
     if(err_code != VTC_SUCCESS) {
         LOG_WARNING("😎 Vertices SDK Wallet can't be loaded");
     }
+    VTC_ASSERT(err_code);
+
+    auto *test_account = (s_account_t*) malloc(sizeof(s_account_t));
+    memset(test_account, 0, sizeof(s_account_t));
+
+    err_code = vertices_s_account_free((const char*) ACCOUNT_NAME);
+    VTC_ASSERT(err_code);
+
+    const int ACCOUNT_COUNT = 5;
+    s_account_t *all_accounts;
+    all_accounts = (s_account_t *) malloc(sizeof (s_account_t) * ACCOUNT_COUNT);
+    err_code = vertices_s_accounts_all_get(&all_accounts);
+    VTC_ASSERT(err_code);
+
+    size_t i = 0;
+    for (i = 0; i < ACCOUNT_COUNT; ++i)
+    {
+        if (all_accounts[i].status == ACCOUNT_ADDED)
+        {
+            LOG_INFO("👛 Discovered secret account : %s --- %s", all_accounts[i].vtc_account->public_b32, all_accounts[i].name);
+        }
+    }
 
     // making sure the provider is accessible
     err_code = vertices_ping();
@@ -284,18 +306,21 @@ main(int argc, char *argv[]) {
     if(err_code == VTC_ERROR_NOT_FOUND) {
         // Create a new secret account called alice's one
         if(create_new) {
-            err_code = vertices_s_account_new_random(&alice_account, (const char*) ACCOUNT_NAME);
-            VTC_ASSERT(err_code);
+            err_code = vertices_s_account_new_random(&alice_account);
         } else {
             char *mnemonic_str = "rally relief lucky maple primary chair syrup economy tired hurdle slot upset clever chest curve bitter weekend prepare movie letter lamp alert then able taste";  // base giraffe believe make tone transfer wrap attend typical dirt grocery distance outside horn also abstract slim ecology island alter daring equal boil absent carpet
             err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
-            VTC_ASSERT(err_code);
         }
     }
+    VTC_ASSERT(err_code);
 
     // Test mnemonic from account
     char *mnemonic;
-    err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
+    if(create_new) {
+        err_code = vertices_mnemonic_from_sk(alice_account.private_key, &mnemonic);
+    } else {
+        err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
+    }
     VTC_ASSERT(err_code);
     printf("mnemonic string generated from account: %s\n", mnemonic);
 
@@ -380,9 +405,10 @@ main(int argc, char *argv[]) {
         LOG_INFO("👉 Haha This is transaction ID: %s",txID);
     }
 
+    free(txID);
+
     vertices_wallet_save((const char*) WALLET_PASSWORD);
 
-    free(txID);
     // delete the created secret accounts from the Vertices wallet
     err_code = vertices_wallet_free();
     VTC_ASSERT(err_code);

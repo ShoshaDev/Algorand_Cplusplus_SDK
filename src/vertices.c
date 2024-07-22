@@ -124,7 +124,25 @@ vertices_s_account_new_from_keys(char *public_key, char *private_key, s_account_
                           &size);
     VTC_ASSERT(err_code);
 
-    return s_account_new(public_b32, private_key, account, account_name);
+    if(strcmp(account_name, "RANDOM$NAME") != 0) {
+        return s_account_new(public_b32, private_key, account, account_name);
+    } else {
+        // copy account keys
+        if(account == NULL) {
+            return VTC_ERROR_INVALID_PARAM;
+        }
+        account->vtc_account = (account_info_t*) malloc(sizeof (account_info_t));
+
+        memcpy(account->vtc_account->public_b32,
+               public_b32,
+               sizeof(account->vtc_account->public_b32));
+
+        memcpy(account->private_key,
+               private_key,
+               sizeof(account->private_key));
+
+        return VTC_SUCCESS;
+    }
 }
 
 VERTICES_EXPORT ret_code_t
@@ -159,16 +177,8 @@ vertices_s_account_new_from_mnemonic(char *mnemonic_str, s_account_t *account, c
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_s_account_new_random(s_account_t *account, const char *account_name) {
+vertices_s_account_new_random(s_account_t *account) {
     ret_code_t err_code;
-
-    if(strlen(account_name) > ACCOUNT_NAME_LENGTH) {
-        return VTC_ERROR_INVALID_PARAM;
-    }
-
-    if(s_account_exists(account_name)) {
-        return VTC_SAME_MEM_EXIST;
-    }
 
     if(sodium_init() < 0) {
         LOG_ERROR("Sodium Library cannot be inited");
@@ -182,7 +192,7 @@ vertices_s_account_new_random(s_account_t *account, const char *account_name) {
 
     crypto_sign_ed25519_seed_keypair(ed25519_pk, ed25519_sk, seed);
 
-    return vertices_s_account_new_from_keys(ed25519_pk,  ed25519_sk, account, account_name);
+    return vertices_s_account_new_from_keys(ed25519_pk,  ed25519_sk, account, "RANDOM$NAME");
 }
 
 VERTICES_EXPORT ret_code_t
@@ -420,7 +430,7 @@ vertices_s_account_get_by_name(s_account_t *account, const char *account_name)
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_s_accounts_all_gets(s_account_t **accounts)
+vertices_s_accounts_all_get(s_account_t **accounts)
 {
     return s_accounts_all_get(accounts);
 }
@@ -449,9 +459,9 @@ vertices_wallet_save(const char *pw)
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_s_account_free(s_account_t **account)
+vertices_s_account_free(const char *account_name)
 {
-    return s_account_free(account);
+    return s_account_free(account_name);
 }
 
 VERTICES_EXPORT ret_code_t

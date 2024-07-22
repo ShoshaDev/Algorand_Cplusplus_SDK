@@ -115,7 +115,7 @@ ret_code_t
 s_account_save(const char *pw);
 
 ret_code_t
-s_account_free(s_account_t **account);
+s_account_free(const char *account_name);
 
 ret_code_t
 s_wallet_free(void);
