@@ -13,7 +13,7 @@
 #define ACCOUNTS_MAXIMUM_COUNT  10
 #define SECRET_ACCOUNTS_MAXIMUM_COUNT   5
 
-static local_accounts_t m_accounts[ACCOUNTS_MAXIMUM_COUNT] = {0};
+static local_account_t m_accounts[ACCOUNTS_MAXIMUM_COUNT] = {0};
 static s_account_t s_accounts[SECRET_ACCOUNTS_MAXIMUM_COUNT] = {0};
 
 static ret_code_t
@@ -246,6 +246,31 @@ s_account_init(void) {
     return VTC_SUCCESS;
 }
 
+ret_code_t
+s_account_init_by_name(const char *account_name) {
+    uint32_t i = 0;
+    for (; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
+    {
+        if (strcmp(account_name, s_accounts[i].name) == 0)
+        {
+            s_accounts[i].status = ACCOUNT_NONE;
+            memset(&s_accounts[i], 0, sizeof(s_account_t));
+            s_accounts[i].vtc_account = (account_info_t *) malloc(sizeof (account_info_t));
+            memset(s_accounts[i].vtc_account, 0 , sizeof (account_info_t));
+            break;
+        }
+    }
+
+    if (i == SECRET_ACCOUNTS_MAXIMUM_COUNT)
+    {
+        return VTC_ERROR_NOT_FOUND;
+    }
+
+    LOG_INFO("👛 Deleted secret account from wallet: #%u", i);
+
+    return VTC_SUCCESS;
+}
+
 bool
 s_wallet_exists(void) {
     FILE *file = fopen(WALLET_STORAGE_FILENAME, "r");
@@ -278,7 +303,6 @@ s_account_exists(const char *account_name) {
     {
         if (strcmp(s_accounts[i].name, account_name) == 0 && s_accounts[i].status == ACCOUNT_ADDED)
         {
-            LOG_INFO("👛 Discovered secret account with the same name on wallet: #%s", s_accounts[i].vtc_account->public_b32);
             break;
         }
     }
@@ -366,42 +390,32 @@ s_account_save(const char *password) {
 }
 
 ret_code_t
-s_account_free(const char *account_name) {
-    uint32_t i = 0;
-    for (; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
-    {
-        if (strcmp(account_name, s_accounts[i].name) == 0)
-        {
-            s_accounts[i].status = ACCOUNT_NONE;
-            memset(&s_accounts[i], 0, sizeof(s_account_t));
-            break;
-        }
-    }
-
-    if (i == SECRET_ACCOUNTS_MAXIMUM_COUNT)
-    {
-        return VTC_ERROR_NOT_FOUND;
-    }
-
-    LOG_INFO("👛 Deleted secret account from wallet: #%u", i);
-
-    return VTC_SUCCESS;
-}
-
-ret_code_t
 s_wallet_free(void) {
     uint32_t account_count = 0;
     uint32_t i = 0;
     for (; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
     {
+        if(s_accounts[i].status == ACCOUNT_ADDED) {
+            account_count++;
+        }
+        s_accounts[i].status = ACCOUNT_NONE;
+        memset(&s_accounts[i], 0, sizeof(s_account_t));
+    }
+
+    LOG_INFO("👛 Deleted #%u secret accounts from memory", account_count);
+
+    account_count = 0;
+    i = 0;
+    for (; i < ACCOUNTS_MAXIMUM_COUNT; ++i)
+    {
         if(m_accounts[i].status == ACCOUNT_ADDED) {
             account_count++;
         }
         m_accounts[i].status = ACCOUNT_NONE;
-        memset(&m_accounts[i].account, 0, sizeof(account_details_t));
+        memset(&m_accounts[i], 0, sizeof(local_account_t));
     }
 
-    LOG_INFO("👛 Deleted #%u accounts from wallet", account_count);
+    LOG_INFO("👛 Deleted #%u common accounts from memory", account_count);
 
     return VTC_SUCCESS;
 }

@@ -15,8 +15,31 @@
 
 typedef enum {
     PAY_TX = 0,
+    ACFG_TX,
+    AXFER_TX,
     APP_CALL_TX
 } tx_type_t;
+
+typedef enum {
+    CREATE_RANDOM_ACC = 0,
+    CREATE_MNEMONIC_ACC,
+    GET_MNEMONIC,
+} acc_type_t;
+
+typedef union {
+    acc_type_t acc_type;
+    tx_type_t tx_type;
+} action_type_t;
+
+typedef enum {
+    ACC_TYPE = 0,
+    TX_TYPE
+} action_kind_t;
+
+typedef struct {
+    action_kind_t kind;
+    action_type_t action;
+} action_t;
 
 static ret_code_t
 vertices_evt_handler(vtc_evt_t *evt);
@@ -27,6 +50,13 @@ static provider_info_t providers;
 static s_account_t alice_account;
 // Bob is receiving the money 😎
 static s_account_t bob_account;
+
+// accounts for aseet config tx
+static s_account_t manager_account;
+static s_account_t reserve_account;
+static s_account_t freeze_account;
+static s_account_t clawback_account;
+
 
 static vertex_t m_vertex;
 
@@ -225,13 +255,8 @@ load_existing_account() {
     return VTC_SUCCESS;
 }
 
-int
-main(int argc, char *argv[]) {
-    ret_code_t err_code;
-
-    tx_type_t run_tx = PAY_TX;
-    bool create_new = false;
-
+static ret_code_t
+init_provider() {
     // Init providers
     providers.algod_url = (char *) SERVER_NODE_URL;
     providers.indexer_url = (char *) SERVER_INDEXER_URL;
@@ -240,33 +265,41 @@ main(int argc, char *argv[]) {
 
     m_vertex.provider = &providers;
     m_vertex.vertices_evt_handler = vertices_evt_handler;
+    return VTC_SUCCESS;
+}
 
+static ret_code_t
+init_account(s_account_t *account) {
+    memset(account->private_key, 0, ADDRESS_LENGTH);
+    account->vtc_account = nullptr;
+    return VTC_SUCCESS;
+}
+
+static ret_code_t
+init_accounts(action_t run_action) {
     // Init Accounts Alice & Bob
-    memset(alice_account.private_key, 0, ADDRESS_LENGTH);
-    alice_account.vtc_account = nullptr;
-    memset(bob_account.private_key, 0, ADDRESS_LENGTH);
-    bob_account.vtc_account = nullptr;
+    init_account(&alice_account);
+    init_account(&bob_account);
 
-    LOG_INFO("😎 Vertices SDK running on Unix-based OS");
+    if(run_action.kind == TX_TYPE && run_action.action.tx_type == ACFG_TX) {
+        init_account(&manager_account);
+        init_account(&reserve_account);
+        init_account(&freeze_account);
+        init_account(&clawback_account);
+    }
+    return VTC_SUCCESS;
+}
 
-    int ret = sodium_init();
-    VTC_ASSERT_BOOL(ret == 0);
-
-    // create new vertex
-    err_code = vertices_new(&m_vertex);
-    VTC_ASSERT(err_code);
-
-    err_code = vertices_wallet_load((const char *) WALLET_PASSWORD);
+static ret_code_t
+load_wallet(action_t run_action) {
+    ret_code_t err_code = vertices_wallet_load((const char *) WALLET_PASSWORD);
     if(err_code != VTC_SUCCESS) {
         LOG_WARNING("😎 Vertices SDK Wallet can't be loaded");
     }
-    VTC_ASSERT(err_code);
 
-    auto *test_account = (s_account_t*) malloc(sizeof(s_account_t));
-    memset(test_account, 0, sizeof(s_account_t));
-
-    err_code = vertices_s_account_free((const char*) ACCOUNT_NAME);
-    VTC_ASSERT(err_code);
+    if(run_action.kind == ACC_TYPE && run_action.action.acc_type != GET_MNEMONIC) {
+        err_code = vertices_s_account_init((const char*) ACCOUNT_NAME);
+    }
 
     const int ACCOUNT_COUNT = 5;
     s_account_t *all_accounts;
@@ -283,8 +316,13 @@ main(int argc, char *argv[]) {
         }
     }
 
+    return err_code;
+}
+
+static ret_code_t
+vertex_health() {
     // making sure the provider is accessible
-    err_code = vertices_ping();
+    ret_code_t err_code = vertices_ping();
     VTC_ASSERT(err_code);
 
     // ask for provider version
@@ -302,117 +340,205 @@ main(int argc, char *argv[]) {
              version.minor,
              version.patch);
 
-    err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ACCOUNT_NAME);
-    if(err_code == VTC_ERROR_NOT_FOUND) {
-        // Create a new secret account called alice's one
-        if(create_new) {
-            err_code = vertices_s_account_new_random(&alice_account);
-        } else {
-            char *mnemonic_str = "rally relief lucky maple primary chair syrup economy tired hurdle slot upset clever chest curve bitter weekend prepare movie letter lamp alert then able taste";  // base giraffe believe make tone transfer wrap attend typical dirt grocery distance outside horn also abstract slim ecology island alter daring equal boil absent carpet
-            err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
-        }
-    }
-    VTC_ASSERT(err_code);
+    return err_code;
+}
 
-    // Test mnemonic from account
-    char *mnemonic;
-    if(create_new) {
-        err_code = vertices_mnemonic_from_sk(alice_account.private_key, &mnemonic);
-    } else {
-        err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
-    }
-    VTC_ASSERT(err_code);
-    printf("mnemonic string generated from account: %s\n", mnemonic);
+static ret_code_t
+check_atomic_balance(s_account_t *account) {
+    LOG_INFO("🤑 %f Algos on this account (%s)",
+             account->vtc_account->amount / 1.e6,
+             account->vtc_account->public_b32);
 
-    //  3) from b32 address
-    //      Note: creating a receiver account is not mandatory to send money to the account
-    //      but we can use it to load the public key from the account address
-    err_code = vertices_account_new_from_b32((char *) ACCOUNT_RECEIVER, &bob_account.vtc_account);
-
-    if(err_code == VTC_ERROR_NO_MEM) {
-        err_code = vertices_wallet_init();
-    }
-    VTC_ASSERT(err_code);
-
-    LOG_INFO("🤑 %f Algos on Alice's account (%s)",
-             alice_account.vtc_account->amount / 1.e6,
-             alice_account.vtc_account->public_b32);
-
-    if (alice_account.vtc_account->amount < 1001000) {
+    if (account->vtc_account->amount < 1001000) {
         LOG_ERROR(
                 "🙄 Amount available on account is too low to pass a transaction, consider adding Algos");
         LOG_INFO("👉 Go to https://bank.testnet.algorand.network/, dispense Algos to: %s",
-                 alice_account.vtc_account->public_b32);
+                 account->vtc_account->public_b32);
         LOG_INFO("😎 Then wait for a few seconds for transaction to pass...");
-        return 0;
+        return VTC_ERROR_INVALID_STATE;
     }
 
-    switch (run_tx) {
-        case PAY_TX: {
-            // send assets from account 0 to account 1
-            char *notes = (char *) "Alice sent 1 Algo to Bob";
-            err_code =
-                    vertices_transaction_pay_new(alice_account.vtc_account,
-                                                 (char *) bob_account.vtc_account->public_key /* or ACCOUNT_RECEIVER Public Key */,
-                                                 AMOUNT_SENT,
-                                                 notes);
+    return VTC_SUCCESS;
+}
+
+static ret_code_t
+load_account_by_addr(char *acc_name, s_account_t *account) {
+    ret_code_t err_code = vertices_account_new_from_b32(acc_name, &account->vtc_account);
+    return err_code;
+}
+
+static ret_code_t
+load_config_accounts(action_t run_action) {
+    ret_code_t err_code = vertices_account_init();
+    VTC_ASSERT(err_code);
+
+    load_account_by_addr((char *) ACCOUNT_RECEIVER, &bob_account);
+
+    if(run_action.kind == TX_TYPE && run_action.action.tx_type == ACFG_TX) {
+        load_account_by_addr((char *) ACCOUNT_MANAGER, &manager_account);
+        load_account_by_addr((char *) ACCOUNT_RESERVE, &reserve_account);
+        load_account_by_addr((char *) ACCOUNT_FREEZE, &freeze_account);
+        load_account_by_addr((char *) ACCOUNT_CLAWBACK, &clawback_account);
+    }
+
+    return VTC_SUCCESS;
+}
+
+static ret_code_t
+account_free(s_account_t *account) {
+    ret_code_t err_code = vertices_account_free(bob_account.vtc_account);
+    VTC_ASSERT(err_code);
+    return err_code;
+}
+
+int
+main(int argc, char *argv[]) {
+    ret_code_t err_code;
+
+    action_t run_tx;
+    run_tx.kind = TX_TYPE;
+    run_tx.action.tx_type = APP_CALL_TX;
+
+    // init provider
+    init_provider();
+
+    // init accounts for processing transaction
+    init_accounts(run_tx);
+
+    int ret = sodium_init();
+    VTC_ASSERT_BOOL(ret == 0);
+
+    // create new vertex
+    err_code = vertices_new(&m_vertex);
+    VTC_ASSERT(err_code);
+
+    // load vertices wallet
+    err_code = load_wallet(run_tx);
+    VTC_ASSERT(err_code);
+
+    // check health of vertex net
+    err_code = vertex_health();
+    VTC_ASSERT(err_code);
+
+    LOG_INFO("😎 Vertices SDK running on Unix-based OS");
+
+    if(run_tx.kind == TX_TYPE) {
+        // get alice_account from wallet
+        err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ACCOUNT_NAME);
+        if(err_code == VTC_ERROR_NOT_FOUND) {
+            printf("account doesn't exist: %s\n", (const char*) ACCOUNT_NAME);
             VTC_ASSERT(err_code);
         }
-            break;
 
-        case APP_CALL_TX: {
-            // get application information
-            LOG_INFO("Application %u, global states", APP_ID);
+        load_config_accounts(run_tx);
+    }
 
-            app_values_t app_kv = {0};
-            err_code = vertices_application_get(APP_ID, &app_kv);
-            VTC_ASSERT(err_code);
-            for (uint32_t i = 0; i < app_kv.count; ++i) {
-                if (app_kv.values[i].type == VALUE_TYPE_INTEGER) {
-                    LOG_INFO("%s: %llu", app_kv.values[i].name, (long long unsigned) app_kv.values[i].value_uint);
-                } else if (app_kv.values[i].type == VALUE_TYPE_BYTESLICE) {
-                    LOG_INFO("%s: %s", app_kv.values[i].name, app_kv.values[i].value_slice);
-                }
+    if(run_tx.kind == ACC_TYPE) {
+        switch (run_tx.action.acc_type) {
+            case CREATE_RANDOM_ACC: {
+                err_code = vertices_s_account_new_random(&alice_account);
+                VTC_ASSERT(err_code);
+                // Test mnemonic from account
+                char *mnemonic;
+                err_code = vertices_mnemonic_from_sk(alice_account.private_key, &mnemonic);
+                VTC_ASSERT(err_code);
+                printf("mnemonics of a random account: %s\n", mnemonic);
+                break;
             }
 
-            // send application call
-            app_values_t kv = {0};
-            kv.count = 1;
-            kv.values[0].type = VALUE_TYPE_INTEGER;
-            kv.values[0].value_uint = 32;
+            case CREATE_MNEMONIC_ACC: {
+                char *mnemonic_str = "rally relief lucky maple primary chair syrup economy tired hurdle slot upset clever chest curve bitter weekend prepare movie letter lamp alert then able taste";  // base giraffe believe make tone transfer wrap attend typical dirt grocery distance outside horn also abstract slim ecology island alter daring equal boil absent carpet
+                err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
+                VTC_ASSERT(err_code);
+                // Test mnemonic from account
+                char *mnemonic;
+                err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
+                VTC_ASSERT(err_code);
+                printf("mnemonic of account with following name: %s ->%s\n", (const char *) ACCOUNT_NAME, mnemonic);
+                break;
+            }
 
-            err_code = vertices_transaction_app_call(alice_account.vtc_account, APP_ID, &kv);
+            case GET_MNEMONIC: {
+                VTC_ASSERT(err_code);
+                break;
+            }
+        }
+    } else {
+        switch (run_tx.action.tx_type) {
+            case PAY_TX: {
+                // send assets from account 0 to account 1
+                char *notes = (char *) "Alice sent 1 Algo to Bob";
+                err_code =
+                        vertices_transaction_pay_new(alice_account.vtc_account,
+                                                     (char *) bob_account.vtc_account->public_key /* or ACCOUNT_RECEIVER Public Key */,
+                                                     AMOUNT_SENT,
+                                                     notes);
+                VTC_ASSERT(err_code);
+            }
+                break;
+
+            case ACFG_TX: {
+//            err_code =
+//                    vertices_transaction_asset_cfg(alice_account.vtc_account,
+//                                                   )
+                break;
+            }
+
+            case AXFER_TX: {
+                break;
+            }
+
+            case APP_CALL_TX: {
+                // get application information
+                LOG_INFO("Application %u, global states", APP_ID);
+
+                app_values_t app_kv = {0};
+                err_code = vertices_application_get(APP_ID, &app_kv);
+                VTC_ASSERT(err_code);
+                for (uint32_t i = 0; i < app_kv.count; ++i) {
+                    if (app_kv.values[i].type == VALUE_TYPE_INTEGER) {
+                        LOG_INFO("%s: %llu", app_kv.values[i].name, (long long unsigned) app_kv.values[i].value_uint);
+                    } else if (app_kv.values[i].type == VALUE_TYPE_BYTESLICE) {
+                        LOG_INFO("%s: %s", app_kv.values[i].name, app_kv.values[i].value_slice);
+                    }
+                }
+
+                // send application call
+                app_values_t kv = {0};
+                kv.count = 1;
+                kv.values[0].type = VALUE_TYPE_INTEGER;
+                kv.values[0].value_uint = 32;
+
+                err_code = vertices_transaction_app_call(alice_account.vtc_account, APP_ID, &kv);
+                VTC_ASSERT(err_code);
+            }
+                break;
+
+            default:
+                LOG_ERROR("Unknown action to run");
+        }
+
+        unsigned char *txID = nullptr;
+        txID = new unsigned char[TRANSACTION_HASH_STR_MAX_LENGTH];
+
+        // processing
+        size_t queue_size = 1;
+        while (queue_size && err_code == VTC_SUCCESS) {
+            err_code = vertices_event_process(&queue_size, txID);
             VTC_ASSERT(err_code);
         }
-            break;
 
-        default:
-            LOG_ERROR("Unknown action to run");
+        if(err_code == VTC_SUCCESS)
+        {
+            LOG_INFO("👉 Haha This is transaction ID: %s",txID);
+        }
+
+        free(txID);
     }
-
-    unsigned char *txID = nullptr;
-    txID = new unsigned char[TRANSACTION_HASH_STR_MAX_LENGTH];
-
-    // processing
-    size_t queue_size = 1;
-    while (queue_size && err_code == VTC_SUCCESS) {
-        err_code = vertices_event_process(&queue_size, txID);
-        VTC_ASSERT(err_code);
-    }
-
-    if(err_code == VTC_SUCCESS)
-    {
-        LOG_INFO("👉 Haha This is transaction ID: %s",txID);
-    }
-
-    free(txID);
 
     vertices_wallet_save((const char*) WALLET_PASSWORD);
 
     // delete the created secret accounts from the Vertices wallet
     err_code = vertices_wallet_free();
-    VTC_ASSERT(err_code);
-
-    err_code = vertices_account_free(bob_account.vtc_account);
     VTC_ASSERT(err_code);
 }

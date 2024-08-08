@@ -64,6 +64,11 @@ vertices_account_new_from_b32(char *public_b32, account_info_t **account)
 }
 
 VERTICES_EXPORT ret_code_t
+vertices_account_init() {
+    return account_init();
+}
+
+VERTICES_EXPORT ret_code_t
 vertices_account_new_from_bin(char *public_key, account_info_t **account)
 {
     VTC_ASSERT_BOOL(public_key != 0);
@@ -260,6 +265,18 @@ vertices_transaction_pay_new(account_info_t *account, char *receiver, uint64_t a
 }
 
 VERTICES_EXPORT ret_code_t
+vertices_transaction_asset_cfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, uint8_t isFrozen, void *unit_name, void *asset_name, void *url, void *params)
+{
+    return transaction_acfg(account, manager, reserve, freeze, clawback, asset_id, total, decimals, isFrozen, unit_name, asset_name, url, params);
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_transaction_asset_xfer(account_info_t *account, char *sender , char *receiver, char *closeRemainderTo, char *revocationTarget, uint64_t asset_id, double amount, void *params)
+{
+    return transaction_axfer(account, sender, receiver, closeRemainderTo, revocationTarget, asset_id, amount, params);
+}
+
+VERTICES_EXPORT ret_code_t
 vertices_transaction_app_call(account_info_t *account, uint64_t app_id, void *params)
 {
     return transaction_appl(account, app_id, params);
@@ -417,6 +434,12 @@ vertices_wallet_init()
     return s_account_init();
 }
 
+VERTICES_EXPORT ret_code_t
+vertices_s_account_init(const char *account_name)
+{
+    return s_account_init_by_name(account_name);
+}
+
 VERTICES_EXPORT bool
 vertices_wallet_exists()
 {
@@ -456,12 +479,6 @@ VERTICES_EXPORT ret_code_t
 vertices_wallet_save(const char *pw)
 {
     return s_account_save(pw);
-}
-
-VERTICES_EXPORT ret_code_t
-vertices_s_account_free(const char *account_name)
-{
-    return s_account_free(account_name);
 }
 
 VERTICES_EXPORT ret_code_t

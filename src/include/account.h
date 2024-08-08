@@ -62,11 +62,11 @@ typedef struct
     apps_local_state_t apps_local[APPS_MAX_COUNT];
 } account_details_t;
 
-typedef struct local_accounts
+typedef struct local_account
 {
     account_details_t account;
     enum account_status_e status;
-} local_accounts_t;
+} local_account_t;
 
 ret_code_t
 account_new(char *public_b32, account_info_t **account);
@@ -102,6 +102,9 @@ s_account_update(s_account_t **account);
 ret_code_t
 s_account_init(void);
 
+ret_code_t
+s_account_init_by_name(const char *account_name);
+
 bool
 s_account_exists(const char *account_name);
 
@@ -113,9 +116,6 @@ s_account_load(const char *pw);
 
 ret_code_t
 s_account_save(const char *pw);
-
-ret_code_t
-s_account_free(const char *account_name);
 
 ret_code_t
 s_wallet_free(void);
