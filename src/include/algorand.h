@@ -39,6 +39,31 @@ typedef struct
 
 typedef struct
 {
+    uint64_t asset_id;
+    uint64_t total;
+    uint64_t decimals;
+    uint8_t isFrozen;
+    char* unit_name;
+    char* asset_name;
+    char* url;
+    // bytes meta_data_hash
+    uint8_t manager[ADDRESS_LENGTH];
+    uint8_t reserve[ADDRESS_LENGTH];
+    uint8_t freeze[ADDRESS_LENGTH];
+    uint8_t clawback[ADDRESS_LENGTH];
+} acfg_tx_t;
+
+typedef struct
+{
+    uint64_t asset_id;
+    uint64_t amount;
+    uint8_t sender[ADDRESS_LENGTH];
+    uint8_t receiver[ADDRESS_LENGTH];
+    uint8_t closeTo[ADDRESS_LENGTH];
+} axfer_tx_t;
+
+typedef struct
+{
     uint64_t app_id; ///< "apid" ID of the application being configured or empty if creating.
     tx_on_complete_t on_complete; ///< "apan" Defines what additional actions occur with the transaction. See the OnComplete section of the TEAL spec for details (https://developer.algorand.org/docs/reference/teal/specification/#oncomplete).
     // uint8_t receiver[ADDRESS_LENGTH]; ///< "apap" Logic executed for every application transaction, except when on-completion is set to "clear". It can read and write global state for the application, as well as account-specific local state. Approval programs may reject the transaction.
@@ -56,6 +81,8 @@ typedef struct
     union transaction
     {
         payment_tx_t pay;
+        acfg_tx_t acfg;
+        axfer_tx_t axfer;
         appl_tx_t appl;
     } tx;
 } transaction_details_t;

@@ -23,6 +23,12 @@ ret_code_t
 transaction_pay(account_info_t *sender, char *receiver, uint64_t amount, void * params);
 
 ret_code_t
+transaction_acfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, uint8_t isFrozen, void *unit_name, void *asset_name, void *url, void *params);
+
+ret_code_t
+transaction_axfer(account_info_t *account, char *sender , char *receiver, char *closeRemainderTo, char *revocationTarget, uint64_t asset_id, double amount, void *params);
+
+ret_code_t
 transaction_appl(account_info_t *sender, uint64_t app_id, void *params);
 
 ret_code_t

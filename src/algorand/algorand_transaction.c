@@ -316,6 +316,188 @@ transaction_pay(account_info_t *sender, char *receiver, uint64_t amount, void *p
 }
 
 ret_code_t
+transaction_acfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, uint8_t isFrozen, void *unit_name, void *asset_name, void *url, void *params) {
+    ret_code_t err_code;
+
+    if (m_pending_tx_buffer[m_tx_buffer_idx].payload_body_length != 0)
+    {
+        return VTC_ERROR_NO_MEM;
+    }
+
+    // check params are correct
+    if (params != NULL)
+    {
+        if (strlen((const char *) params) > OPTIONAL_TX_FIELDS_MAX_SIZE_BYTES)
+        {
+            // consider using more bytes for each transaction by setting a larger value to
+            // OPTIONAL_TX_FIELDS_MAX_SIZE
+            LOG_ERROR("Unable to store params");
+            return VTC_ERROR_INVALID_PARAM;
+        }
+    }
+
+    // check asset url are correct
+    if (url != NULL)
+    {
+        if (strlen((const char *) url) > OPTIONAL_TX_FIELDS_MAX_SIZE_BYTES)
+        {
+            // consider using more bytes for each transaction by setting a larger value to
+            // OPTIONAL_TX_FIELDS_MAX_SIZE
+            LOG_ERROR("Unable to store url");
+            return VTC_ERROR_INVALID_PARAM;
+        }
+    }
+
+    if (unit_name == NULL || asset_name == NULL)
+    {
+        LOG_ERROR("Unable to store unit and asset name because their value hasn't been given");
+        return VTC_ERROR_INVALID_PARAM;
+    }
+
+    // check unit and asset name are correct
+    if (strlen((const char *) unit_name) == 0 || strlen((const char *) asset_name) == 0)
+    {
+        LOG_ERROR("Unable to store unit or asset name because invalid value been given");
+        return VTC_ERROR_INVALID_PARAM;
+    }
+
+    m_pending_tx_buffer[m_tx_buffer_idx].payload_body_length =
+            sizeof m_pending_tx_buffer[m_tx_buffer_idx].payload;
+
+    // instantiate transaction
+    transaction_details_t details = {0};
+    transaction_t tx_full = {0};
+    tx_full.details = &details;
+
+    // fill generic transaction_t
+    memcpy(tx_full.sender_pub, account->public_key, sizeof(tx_full.sender_pub));
+
+    tx_full.fee = TX_DEFAULT_FEE;
+    tx_full.details->tx_type = ALGORAND_ASSET_CONFIGURATION_TRANSACTION;
+    tx_full.details->note = (char *) params;
+
+    tx_full.details->tx.acfg.asset_id = asset_id;
+    tx_full.details->tx.acfg.total = total;
+    tx_full.details->tx.acfg.isFrozen = isFrozen;
+    tx_full.details->tx.acfg.decimals = decimals;
+    tx_full.details->tx.acfg.url = (char *) url;
+    tx_full.details->tx.acfg.asset_name = (char *) asset_name;
+    tx_full.details->tx.acfg.unit_name = (char *) unit_name;
+
+    memcpy(tx_full.details->tx.acfg.manager,
+           manager,
+           sizeof(tx_full.details->tx.acfg.manager));
+
+    memcpy(tx_full.details->tx.acfg.reserve,
+           reserve,
+           sizeof(tx_full.details->tx.acfg.reserve));
+
+    memcpy(tx_full.details->tx.acfg.freeze,
+           freeze,
+           sizeof(tx_full.details->tx.acfg.freeze));
+
+    memcpy(tx_full.details->tx.acfg.clawback,
+           clawback,
+           sizeof(tx_full.details->tx.acfg.clawback));
+
+    // get provider details
+    err_code = provider_tx_params_load(&tx_full);
+    if (err_code != VTC_SUCCESS && err_code != VTC_ERROR_OFFLINE)
+    {
+        LOG_ERROR("Cannot fetch tx params");
+        return err_code;
+    }
+
+    // tx is now ready to be encoded
+    err_code = encode_tx(&tx_full);
+    VTC_ASSERT(err_code);
+
+    vtc_evt_t evt = {.type = VTC_EVT_TX_READY_TO_SIGN, .bufid = m_tx_buffer_idx};
+
+    // m_tx_buffer_idx spot is now taken, push index
+    m_tx_buffer_idx = (m_tx_buffer_idx + 1) % PENDING_TX_COUNT;
+
+    // push event for asynchronous operation
+    err_code = vertices_event_schedule(&evt);
+
+    return err_code;
+}
+
+ret_code_t
+transaction_axfer(account_info_t *account, char *sender , char *receiver, char *closeRemainderTo, char *revocationTarget, uint64_t asset_id, double amount, void *params) {
+    ret_code_t err_code;
+
+    if (m_pending_tx_buffer[m_tx_buffer_idx].payload_body_length != 0)
+    {
+        return VTC_ERROR_NO_MEM;
+    }
+
+    // check params are correct
+    if (params != NULL)
+    {
+        if (strlen((const char *) params) > OPTIONAL_TX_FIELDS_MAX_SIZE_BYTES)
+        {
+            // consider using more bytes for each transaction by setting a larger value to
+            // OPTIONAL_TX_FIELDS_MAX_SIZE
+            LOG_ERROR("Unable to store params");
+            return VTC_ERROR_INVALID_PARAM;
+        }
+    }
+
+    m_pending_tx_buffer[m_tx_buffer_idx].payload_body_length =
+            sizeof m_pending_tx_buffer[m_tx_buffer_idx].payload;
+
+    // instantiate transaction
+    transaction_details_t details = {0};
+    transaction_t tx_full = {0};
+    tx_full.details = &details;
+
+    // fill generic transaction_t
+    memcpy(tx_full.sender_pub, account->public_key, sizeof(tx_full.sender_pub));
+
+    tx_full.fee = TX_DEFAULT_FEE;
+    tx_full.details->tx_type = ALGORAND_ASSET_CONFIGURATION_TRANSACTION;
+    tx_full.details->note = (char *) params;
+
+    tx_full.details->tx.axfer.asset_id = asset_id;
+    tx_full.details->tx.axfer.amount = amount;
+
+    memcpy(tx_full.details->tx.axfer.sender,
+           sender,
+           sizeof(tx_full.details->tx.axfer.sender));
+
+    memcpy(tx_full.details->tx.axfer.receiver,
+           receiver,
+           sizeof(tx_full.details->tx.axfer.receiver));
+
+    memcpy(tx_full.details->tx.axfer.closeTo,
+           closeRemainderTo,
+           sizeof(tx_full.details->tx.axfer.closeTo));
+
+    // get provider details
+    err_code = provider_tx_params_load(&tx_full);
+    if (err_code != VTC_SUCCESS && err_code != VTC_ERROR_OFFLINE)
+    {
+        LOG_ERROR("Cannot fetch tx params");
+        return err_code;
+    }
+
+    // tx is now ready to be encoded
+    err_code = encode_tx(&tx_full);
+    VTC_ASSERT(err_code);
+
+    vtc_evt_t evt = {.type = VTC_EVT_TX_READY_TO_SIGN, .bufid = m_tx_buffer_idx};
+
+    // m_tx_buffer_idx spot is now taken, push index
+    m_tx_buffer_idx = (m_tx_buffer_idx + 1) % PENDING_TX_COUNT;
+
+    // push event for asynchronous operation
+    err_code = vertices_event_schedule(&evt);
+
+    return err_code;
+}
+
+ret_code_t
 transaction_appl(account_info_t *sender,
                  uint64_t app_id,
                  void *params)
