@@ -102,11 +102,17 @@ encode_tx(transaction_t *tx)
     {
         txn_map_element_count += 2; // + receiver & amount
     }
-    else if ( tx->details->tx_type == ALGORAND_ASSET_CONFIGURATION_TRANSACTION)
+    else if (tx->details->tx_type == ALGORAND_ASSET_CONFIGURATION_TRANSACTION)
     {
         txn_map_element_count ++; // + apar
         if(tx->details->tx.acfg.asset_id != 0) {
             txn_map_element_count ++; //  + caid
+        }
+    }
+    else if (tx->details->tx_type == ALGORAND_ASSET_TRANSFER_TRANSACTION) {
+        txn_map_element_count += 2; // xfer_asset, asset_amount, asset_sender, asset_receiver, asset_close_to
+        if(tx->details->tx.axfer.amount != 0) {
+            txn_map_element_count += 2;
         }
     }
     else if (tx->details->tx_type == ALGORAND_APPLICATION_CALL_TRANSACTION)
@@ -184,6 +190,24 @@ encode_tx(transaction_t *tx)
         if(tx->details->tx.acfg.asset_id != 0) {
             mpack_write_cstr(&writer, "caid");
             mpack_write_uint(&writer, tx->details->tx.acfg.asset_id);
+        }
+    }
+
+    if(tx->details->tx_type == ALGORAND_ASSET_TRANSFER_TRANSACTION) {
+        if(tx->details->tx.axfer.amount != 0) {
+            mpack_write_cstr(&writer, "aamt");
+            mpack_write_uint(&writer, tx->details->tx.axfer.amount);
+
+//            mpack_write_cstr(&writer, "aclose");
+//            mpack_write_bin(&writer, (const char*) tx->details->tx.axfer.closeTo, ADDRESS_LENGTH);
+        }
+
+        mpack_write_cstr(&writer, "arcv");
+        mpack_write_bin(&writer, (const char*) tx->details->tx.axfer.receiver, ADDRESS_LENGTH);
+
+        if(tx->details->tx.axfer.amount != 0) {
+            mpack_write_cstr(&writer, "asnd");
+            mpack_write_bin(&writer, (const char*) tx->details->tx.axfer.sender, ADDRESS_LENGTH);
         }
     }
 
@@ -285,6 +309,11 @@ encode_tx(transaction_t *tx)
 
     mpack_write_cstr(&writer, "type");
     mpack_write_cstr(&writer, algorand_tx_types[tx->details->tx_type]);
+
+    if(tx->details->tx_type == ALGORAND_ASSET_TRANSFER_TRANSACTION) {
+        mpack_write_cstr(&writer, "xaid");
+        mpack_write_uint(&writer, tx->details->tx.axfer.asset_id);
+    }
 
     mpack_finish_map(&writer); // finished "txn" map
     mpack_finish_map(&writer); // finished root map
@@ -488,7 +517,7 @@ transaction_acfg(account_info_t *account, char *manager , char *reserve, char *f
 }
 
 ret_code_t
-transaction_axfer(account_info_t *account, char *sender , char *receiver, char *closeRemainderTo, char *revocationTarget, uint64_t asset_id, double amount, void *params) {
+transaction_axfer(account_info_t *account, char *sender , char *receiver, uint64_t asset_id, double amount, void *params) {
     ret_code_t err_code;
 
     if (m_pending_tx_buffer[m_tx_buffer_idx].payload_body_length != 0)
@@ -520,23 +549,21 @@ transaction_axfer(account_info_t *account, char *sender , char *receiver, char *
     memcpy(tx_full.sender_pub, account->public_key, sizeof(tx_full.sender_pub));
 
     tx_full.fee = TX_DEFAULT_FEE;
-    tx_full.details->tx_type = ALGORAND_ASSET_CONFIGURATION_TRANSACTION;
+    tx_full.details->tx_type = ALGORAND_ASSET_TRANSFER_TRANSACTION;
     tx_full.details->note = (char *) params;
 
     tx_full.details->tx.axfer.asset_id = asset_id;
     tx_full.details->tx.axfer.amount = amount;
 
-    memcpy(tx_full.details->tx.axfer.sender,
-           sender,
-           sizeof(tx_full.details->tx.axfer.sender));
+    if(sender != NULL) {
+        memcpy(tx_full.details->tx.axfer.sender,
+               sender,
+               sizeof(tx_full.details->tx.axfer.sender));
+    }
 
     memcpy(tx_full.details->tx.axfer.receiver,
            receiver,
            sizeof(tx_full.details->tx.axfer.receiver));
-
-    memcpy(tx_full.details->tx.axfer.closeTo,
-           closeRemainderTo,
-           sizeof(tx_full.details->tx.axfer.closeTo));
 
     // get provider details
     err_code = provider_tx_params_load(&tx_full);

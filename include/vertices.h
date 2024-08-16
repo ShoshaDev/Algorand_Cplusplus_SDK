@@ -95,14 +95,12 @@ vertices_transaction_asset_cfg(account_info_t *account, char *manager , char *re
 /// \param account Handle to the Sender account
 /// \param sender Sender account address
 /// \param receiver Receiver account address
-/// \param closeRemainderTo Close Remainder account address
-/// \param revocationTarget Revocation Target account address
 /// \param asset_id Asset ID of token to be sent
 /// \param amount Amount of token to be sent
 /// \param params Pointer to type, where type is known by blockchain implementation. Can be NULL.
 /// \return \c VTC_ERROR_INVALID_PARAM if one parameter is incorrect
 VERTICES_IMPORT ret_code_t
-vertices_transaction_asset_xfer(account_info_t *account, char *sender , char *receiver, char *closeRemainderTo, char *revocationTarget, uint64_t asset_id, double amount, void *params);
+vertices_transaction_asset_xfer(account_info_t *account, char *sender , char *receiver, uint64_t asset_id, double amount, void *params);
 
 /// Call Smart Contract DApp
 /// \param account Account handle, see \c vertices_account_new_from_b32

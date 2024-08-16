@@ -73,9 +73,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
 
                 // libsodium wants to have private and public keys concatenated
                 unsigned char keys[crypto_sign_ed25519_SECRETKEYBYTES] = {0};
-                memcpy(keys, alice_account.private_key, sizeof(alice_account.private_key));
+                memcpy(keys, bob_account.private_key, sizeof(bob_account.private_key));
                 memcpy(&keys[32],
-                       alice_account.vtc_account->public_key,
+                       bob_account.vtc_account->public_key,
                        ADDRESS_LENGTH);
 
                 // prepend "TX" to the payload before signing
@@ -281,7 +281,7 @@ init_accounts(action_t run_action) {
     init_account(&alice_account);
     init_account(&bob_account);
 
-    if(run_action.kind == TX_TYPE && run_action.action.tx_type == ACFG_TX) {
+    if(run_action.kind == TX_TYPE && ( run_action.action.tx_type == ACFG_TX || run_action.action.tx_type == AXFER_TX )) {
         init_account(&manager_account);
         init_account(&reserve_account);
         init_account(&freeze_account);
@@ -298,7 +298,7 @@ load_wallet(action_t run_action) {
     }
 
     if(run_action.kind == ACC_TYPE && run_action.action.acc_type != GET_MNEMONIC) {
-        err_code = vertices_s_account_init((const char*) ACCOUNT_NAME);
+        err_code = vertices_s_account_init((const char*) ALICE_NAME);
     }
 
     const int ACCOUNT_COUNT = 5;
@@ -371,10 +371,10 @@ static ret_code_t
 load_config_accounts(action_t run_action) {
     ret_code_t err_code = vertices_account_init();
     VTC_ASSERT(err_code);
+//
+//    load_account_by_addr((char *) ACCOUNT_RECEIVER, &bob_account);
 
-    load_account_by_addr((char *) ACCOUNT_RECEIVER, &bob_account);
-
-    if(run_action.kind == TX_TYPE && run_action.action.tx_type == ACFG_TX) {
+    if(run_action.kind == TX_TYPE && ( run_action.action.tx_type == ACFG_TX) || run_action.action.tx_type == AXFER_TX) {
         load_account_by_addr((char *) ACCOUNT_MANAGER, &manager_account);
         load_account_by_addr((char *) ACCOUNT_RESERVE, &reserve_account);
         load_account_by_addr((char *) ACCOUNT_FREEZE, &freeze_account);
@@ -397,7 +397,7 @@ main(int argc, char *argv[]) {
 
     action_t run_tx;
     run_tx.kind = TX_TYPE;
-    run_tx.action.tx_type = ACFG_TX;
+    run_tx.action.tx_type = AXFER_TX;
 
     // init provider
     init_provider();
@@ -424,9 +424,15 @@ main(int argc, char *argv[]) {
 
     if(run_tx.kind == TX_TYPE) {
         // get alice_account from wallet
-        err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ACCOUNT_NAME);
+        err_code = vertices_s_account_get_by_name(&alice_account, (const char*) ALICE_NAME);
         if(err_code == VTC_ERROR_NOT_FOUND) {
-            printf("account doesn't exist: %s\n", (const char*) ACCOUNT_NAME);
+            printf("account doesn't exist: %s\n", (const char*) ALICE_NAME);
+            VTC_ASSERT(err_code);
+        }
+
+        err_code = vertices_s_account_get_by_name(&bob_account, (const char*) BOB_NAME);
+        if(err_code == VTC_ERROR_NOT_FOUND) {
+            printf("account doesn't exist: %s\n", (const char*) BOB_NAME);
             VTC_ASSERT(err_code);
         }
 
@@ -438,9 +444,14 @@ main(int argc, char *argv[]) {
             case CREATE_RANDOM_ACC: {
                 err_code = vertices_s_account_new_random(&alice_account);
                 VTC_ASSERT(err_code);
+                err_code = vertices_s_account_new_random(&bob_account);
+                VTC_ASSERT(err_code);
                 // Test mnemonic from account
                 char *mnemonic;
                 err_code = vertices_mnemonic_from_sk(alice_account.private_key, &mnemonic);
+                VTC_ASSERT(err_code);
+                printf("mnemonics of a random account: %s\n", mnemonic);
+                err_code = vertices_mnemonic_from_sk(bob_account.private_key, &mnemonic);
                 VTC_ASSERT(err_code);
                 printf("mnemonics of a random account: %s\n", mnemonic);
                 break;
@@ -448,13 +459,19 @@ main(int argc, char *argv[]) {
 
             case CREATE_MNEMONIC_ACC: {
                 char *mnemonic_str = "rally relief lucky maple primary chair syrup economy tired hurdle slot upset clever chest curve bitter weekend prepare movie letter lamp alert then able taste";  // base giraffe believe make tone transfer wrap attend typical dirt grocery distance outside horn also abstract slim ecology island alter daring equal boil absent carpet
-                err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ACCOUNT_NAME);
+                err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &alice_account, (const char*) ALICE_NAME);
+                VTC_ASSERT(err_code);
+                mnemonic_str = "base giraffe believe make tone transfer wrap attend typical dirt grocery distance outside horn also abstract slim ecology island alter daring equal boil absent carpet";
+                err_code = vertices_s_account_new_from_mnemonic(mnemonic_str, &bob_account, (const char*) BOB_NAME);
                 VTC_ASSERT(err_code);
                 // Test mnemonic from account
                 char *mnemonic;
-                err_code = vertices_mnemonic_from_account((const char *) ACCOUNT_NAME, &mnemonic);
+                err_code = vertices_mnemonic_from_account((const char *) ALICE_NAME, &mnemonic);
                 VTC_ASSERT(err_code);
-                printf("mnemonic of account with following name: %s ->%s\n", (const char *) ACCOUNT_NAME, mnemonic);
+                printf("mnemonic of %s account : ->%s\n", (const char *) ALICE_NAME, mnemonic);
+                err_code = vertices_mnemonic_from_account((const char *) BOB_NAME, &mnemonic);
+                VTC_ASSERT(err_code);
+                printf("mnemonic of %s account : ->%s\n", (const char *) BOB_NAME, mnemonic);
                 break;
             }
 
@@ -484,8 +501,8 @@ main(int argc, char *argv[]) {
                                                        (char *) alice_account.vtc_account->public_key, // (char *) manager_account.vtc_account->public_key,
                                                        (char *) reserve_account.vtc_account->public_key,
                                                        (char *) freeze_account.vtc_account->public_key,
-                                                       (char *) clawback_account.vtc_account->public_key,
-                                                       715530013,
+                                                       (char *) alice_account.vtc_account->public_key,
+                                                       0,
                                                        10000,
                                                        8,
                                                        true,
@@ -499,6 +516,29 @@ main(int argc, char *argv[]) {
             }
 
             case AXFER_TX: {
+                // For transferring asset, enable below function work
+//                char *notes = (char *) "Transfer an algorand asset";
+//                err_code =
+//                        vertices_transaction_asset_xfer(alice_account.vtc_account,
+//                                                        (char *) alice_account.vtc_account->public_key,
+//                                                        (char *) bob_account.vtc_account->public_key,
+//                                                        715553268,      // 715550315, 715530013
+//                                                        200,
+//                                                        notes
+//                                                        );
+
+                // For opt-in tx, enable below function work
+                // change alice_account to bob_account when tx is signed
+                char *notes = (char *) "Create an Opt-In transaction";
+                err_code =
+                        vertices_transaction_asset_xfer(bob_account.vtc_account,
+                                                        (char *) bob_account.vtc_account->public_key,
+                                                        (char *) bob_account.vtc_account->public_key,
+                                                        715553268,      // 715550315, 715530013
+                                                        0,
+                                                        notes
+                        );
+                VTC_ASSERT(err_code);
                 break;
             }
 

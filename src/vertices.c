@@ -271,9 +271,9 @@ vertices_transaction_asset_cfg(account_info_t *account, char *manager , char *re
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_transaction_asset_xfer(account_info_t *account, char *sender , char *receiver, char *closeRemainderTo, char *revocationTarget, uint64_t asset_id, double amount, void *params)
+vertices_transaction_asset_xfer(account_info_t *account, char *sender , char *receiver, uint64_t asset_id, double amount, void *params)
 {
-    return transaction_axfer(account, sender, receiver, closeRemainderTo, revocationTarget, asset_id, amount, params);
+    return transaction_axfer(account, sender, receiver, asset_id, amount, params);
 }
 
 VERTICES_EXPORT ret_code_t
