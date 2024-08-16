@@ -7,6 +7,8 @@
 #ifndef VERTICES_SDK_LIB_INC_TRANSACTION_ALGORAND_H
 #define VERTICES_SDK_LIB_INC_TRANSACTION_ALGORAND_H
 
+#include <stdbool.h>
+
 #define TX_DEFAULT_FEE 1000
 
 typedef enum
@@ -42,7 +44,7 @@ typedef struct
     uint64_t asset_id;
     uint64_t total;
     uint64_t decimals;
-    uint8_t isFrozen;
+    bool isFrozen;
     char* unit_name;
     char* asset_name;
     char* url;

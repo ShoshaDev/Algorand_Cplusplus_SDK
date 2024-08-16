@@ -102,6 +102,13 @@ encode_tx(transaction_t *tx)
     {
         txn_map_element_count += 2; // + receiver & amount
     }
+    else if ( tx->details->tx_type == ALGORAND_ASSET_CONFIGURATION_TRANSACTION)
+    {
+        txn_map_element_count ++; // + apar
+        if(tx->details->tx.acfg.asset_id != 0) {
+            txn_map_element_count ++; //  + caid
+        }
+    }
     else if (tx->details->tx_type == ALGORAND_APPLICATION_CALL_TRANSACTION)
     {
         txn_map_element_count += 1; // + app ID
@@ -128,6 +135,56 @@ encode_tx(transaction_t *tx)
     {
         mpack_write_cstr(&writer, "amt");
         mpack_write_uint(&writer, tx->details->tx.pay.amount);
+    }
+
+    if(tx->details->tx_type == ALGORAND_ASSET_CONFIGURATION_TRANSACTION) {
+        uint32_t asset_param_map_element_count = 9;
+        if(tx->details->tx.acfg.isFrozen) {
+            asset_param_map_element_count ++;
+        }
+        // optional asset params
+        mpack_write_cstr(&writer, "apar");
+        mpack_start_map(&writer, asset_param_map_element_count);
+        /// an, au, c, dc, df, f, m,r, t, un
+            mpack_write_cstr(&writer, "an");
+            mpack_write_cstr(&writer, tx->details->tx.acfg.asset_name);
+
+            mpack_write_cstr(&writer, "au");
+            mpack_write_cstr(&writer, tx->details->tx.acfg.url);
+
+            mpack_write_cstr(&writer, "c");
+            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.clawback, ADDRESS_LENGTH);
+
+            mpack_write_cstr(&writer, "dc");
+            mpack_write_uint(&writer, tx->details->tx.acfg.decimals);
+
+            if(tx->details->tx.acfg.isFrozen) {
+                mpack_write_cstr(&writer, "df");
+                mpack_write_true(&writer);
+            }
+
+            mpack_write_cstr(&writer, "f");
+            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.freeze, ADDRESS_LENGTH);
+
+            mpack_write_cstr(&writer, "m");
+            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.manager, ADDRESS_LENGTH);
+
+            mpack_write_cstr(&writer, "r");
+            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.reserve, ADDRESS_LENGTH);
+
+            mpack_write_cstr(&writer, "t");
+            mpack_write_uint(&writer, tx->details->tx.acfg.total);
+
+            mpack_write_cstr(&writer, "un");
+            mpack_write_cstr(&writer, tx->details->tx.acfg.unit_name);
+
+        mpack_finish_map(&writer);
+
+        // config asset - caid - order depends on c++ context, not alphabetical order of algorand transaction
+        if(tx->details->tx.acfg.asset_id != 0) {
+            mpack_write_cstr(&writer, "caid");
+            mpack_write_uint(&writer, tx->details->tx.acfg.asset_id);
+        }
     }
 
     if (tx->details->tx_type == ALGORAND_APPLICATION_CALL_TRANSACTION)
@@ -316,7 +373,7 @@ transaction_pay(account_info_t *sender, char *receiver, uint64_t amount, void *p
 }
 
 ret_code_t
-transaction_acfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, uint8_t isFrozen, void *unit_name, void *asset_name, void *url, void *params) {
+transaction_acfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, bool isFrozen, void *unit_name, void *asset_name, void *url, void *params) {
     ret_code_t err_code;
 
     if (m_pending_tx_buffer[m_tx_buffer_idx].payload_body_length != 0)
@@ -358,6 +415,13 @@ transaction_acfg(account_info_t *account, char *manager , char *reserve, char *f
     if (strlen((const char *) unit_name) == 0 || strlen((const char *) asset_name) == 0)
     {
         LOG_ERROR("Unable to store unit or asset name because invalid value been given");
+        return VTC_ERROR_INVALID_PARAM;
+    }
+
+    // check when decimals is bigger than 19
+    if (decimals > 19)
+    {
+        LOG_ERROR("Unable to store decimals because its value is bigger than 19");
         return VTC_ERROR_INVALID_PARAM;
     }
 

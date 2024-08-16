@@ -265,7 +265,7 @@ vertices_transaction_pay_new(account_info_t *account, char *receiver, uint64_t a
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_transaction_asset_cfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, uint8_t isFrozen, void *unit_name, void *asset_name, void *url, void *params)
+vertices_transaction_asset_cfg(account_info_t *account, char *manager , char *reserve, char *freeze, char *clawback, uint64_t asset_id, uint64_t total, uint64_t decimals, bool isFrozen, void *unit_name, void *asset_name, void *url, void *params)
 {
     return transaction_acfg(account, manager, reserve, freeze, clawback, asset_id, total, decimals, isFrozen, unit_name, asset_name, url, params);
 }

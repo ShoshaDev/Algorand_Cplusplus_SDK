@@ -397,7 +397,7 @@ main(int argc, char *argv[]) {
 
     action_t run_tx;
     run_tx.kind = TX_TYPE;
-    run_tx.action.tx_type = APP_CALL_TX;
+    run_tx.action.tx_type = ACFG_TX;
 
     // init provider
     init_provider();
@@ -478,9 +478,23 @@ main(int argc, char *argv[]) {
                 break;
 
             case ACFG_TX: {
-//            err_code =
-//                    vertices_transaction_asset_cfg(alice_account.vtc_account,
-//                                                   )
+                char *notes = (char *) "Create a new asset";
+                err_code =
+                        vertices_transaction_asset_cfg(alice_account.vtc_account,
+                                                       (char *) alice_account.vtc_account->public_key, // (char *) manager_account.vtc_account->public_key,
+                                                       (char *) reserve_account.vtc_account->public_key,
+                                                       (char *) freeze_account.vtc_account->public_key,
+                                                       (char *) clawback_account.vtc_account->public_key,
+                                                       715530013,
+                                                       10000,
+                                                       8,
+                                                       true,
+                                                       (void *) "USD",
+                                                       (void *) "SHOSHA",
+                                                       (void *) "http://this.test.com",
+                                                       notes
+                                                       );
+                VTC_ASSERT(err_code);
                 break;
             }
 
