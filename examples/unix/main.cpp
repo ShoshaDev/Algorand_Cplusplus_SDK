@@ -73,9 +73,9 @@ vertices_evt_handler(vtc_evt_t *evt) {
 
                 // libsodium wants to have private and public keys concatenated
                 unsigned char keys[crypto_sign_ed25519_SECRETKEYBYTES] = {0};
-                memcpy(keys, bob_account.private_key, sizeof(bob_account.private_key));
+                memcpy(keys, alice_account.private_key, sizeof(alice_account.private_key));
                 memcpy(&keys[32],
-                       bob_account.vtc_account->public_key,
+                       alice_account.vtc_account->public_key,
                        ADDRESS_LENGTH);
 
                 // prepend "TX" to the payload before signing
@@ -362,8 +362,8 @@ check_atomic_balance(s_account_t *account) {
 }
 
 static ret_code_t
-load_account_by_addr(char *acc_name, s_account_t *account) {
-    ret_code_t err_code = vertices_account_new_from_b32(acc_name, &account->vtc_account);
+load_account_by_addr(char *acc_addr, s_account_t *account) {
+    ret_code_t err_code = vertices_account_new_from_b32(acc_addr, &account->vtc_account);
     return err_code;
 }
 
@@ -372,7 +372,7 @@ load_config_accounts(action_t run_action) {
     ret_code_t err_code = vertices_account_init();
     VTC_ASSERT(err_code);
 //
-//    load_account_by_addr((char *) ACCOUNT_RECEIVER, &bob_account);
+     load_account_by_addr((char *) ACCOUNT_RECEIVER, &bob_account);
 
     if(run_action.kind == TX_TYPE && ( run_action.action.tx_type == ACFG_TX) || run_action.action.tx_type == AXFER_TX) {
         load_account_by_addr((char *) ACCOUNT_MANAGER, &manager_account);
@@ -409,7 +409,7 @@ main(int argc, char *argv[]) {
     VTC_ASSERT_BOOL(ret == 0);
 
     // create new vertex
-    err_code = vertices_new(&m_vertex);
+    err_code = vertices_new(&m_vertex, true);
     VTC_ASSERT(err_code);
 
     // load vertices wallet
@@ -430,11 +430,11 @@ main(int argc, char *argv[]) {
             VTC_ASSERT(err_code);
         }
 
-        err_code = vertices_s_account_get_by_name(&bob_account, (const char*) BOB_NAME);
-        if(err_code == VTC_ERROR_NOT_FOUND) {
-            printf("account doesn't exist: %s\n", (const char*) BOB_NAME);
-            VTC_ASSERT(err_code);
-        }
+//        err_code = vertices_s_account_get_by_name(&bob_account, (const char*) BOB_NAME);
+//        if(err_code == VTC_ERROR_NOT_FOUND) {
+//            printf("account doesn't exist: %s\n", (const char*) BOB_NAME);
+//            VTC_ASSERT(err_code);
+//        }
 
         load_config_accounts(run_tx);
     }
@@ -517,27 +517,27 @@ main(int argc, char *argv[]) {
 
             case AXFER_TX: {
                 // For transferring asset, enable below function work
-//                char *notes = (char *) "Transfer an algorand asset";
-//                err_code =
-//                        vertices_transaction_asset_xfer(alice_account.vtc_account,
-//                                                        (char *) alice_account.vtc_account->public_key,
-//                                                        (char *) bob_account.vtc_account->public_key,
-//                                                        715553268,      // 715550315, 715530013
-//                                                        200,
-//                                                        notes
-//                                                        );
+                char *notes = (char *) "Transfer an algorand asset";
+                err_code =
+                        vertices_transaction_asset_xfer(alice_account.vtc_account,
+                                                        (char *) alice_account.vtc_account->public_key,
+                                                        (char *) bob_account.vtc_account->public_key,
+                                                        715553268,      // 715550315, 715530013
+                                                        200,
+                                                        notes
+                                                        );
 
                 // For opt-in tx, enable below function work
                 // change alice_account to bob_account when tx is signed
-                char *notes = (char *) "Create an Opt-In transaction";
-                err_code =
-                        vertices_transaction_asset_xfer(bob_account.vtc_account,
-                                                        (char *) bob_account.vtc_account->public_key,
-                                                        (char *) bob_account.vtc_account->public_key,
-                                                        715553268,      // 715550315, 715530013
-                                                        0,
-                                                        notes
-                        );
+//                char *notes = (char *) "Create an Opt-In transaction";
+//                err_code =
+//                        vertices_transaction_asset_xfer(bob_account.vtc_account,
+//                                                        (char *) bob_account.vtc_account->public_key,
+//                                                        (char *) bob_account.vtc_account->public_key,
+//                                                        715553268,      // 715550315, 715530013
+//                                                        0,
+//                                                        notes
+//                        );
                 VTC_ASSERT(err_code);
                 break;
             }

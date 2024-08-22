@@ -58,6 +58,12 @@ vertices_ping()
 }
 
 VERTICES_EXPORT ret_code_t
+vertices_provider_buf_get(char **buf)
+{
+    return provider_buffer_get(buf);
+}
+
+VERTICES_EXPORT ret_code_t
 vertices_account_new_from_b32(char *public_b32, account_info_t **account)
 {
     return account_new(public_b32, account);
@@ -341,6 +347,10 @@ vertices_event_process(size_t * queue_size, unsigned char * txID)
             {
                 err_code =
                     transaction_pending_send(m_events_queue.evt[m_events_queue.rd_index].bufid);
+                if(err_code > VTC_ERROR_HTTP_BASE) {
+                    int response_code = err_code - VTC_ERROR_HTTP_BASE;
+                    err_code = VTC_ERROR_HTTP_BASE;
+                }
             }
                 break;
             default:break;
@@ -407,9 +417,11 @@ vertices_event_process(size_t * queue_size, unsigned char * txID)
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_new(vertex_t *config)
+vertices_new(vertex_t *config, bool withNewWallet)
 {
     ret_code_t err_code;
+
+    vertices_cache_clear();
 
     err_code = provider_init(config->provider);
     if (err_code != VTC_SUCCESS)
@@ -420,12 +432,23 @@ vertices_new(vertex_t *config)
     err_code = account_init();
     RET_CODE_SUCCESS(err_code);
 
-    err_code = s_account_init();
-    RET_CODE_SUCCESS(err_code);
+    if(withNewWallet) {
+        err_code = s_account_init();
+        RET_CODE_SUCCESS(err_code);
+    }
 
     m_vertices_evt_handler = config->vertices_evt_handler;
 
     return err_code;
+}
+
+VERTICES_EXPORT ret_code_t
+vertices_cache_clear() {
+    memset(&m_events_queue, 0, sizeof m_events_queue);
+    provider_cache_clear();
+    transaction_cache_clear();
+
+    return VTC_SUCCESS;
 }
 
 VERTICES_EXPORT ret_code_t

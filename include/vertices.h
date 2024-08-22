@@ -30,6 +30,9 @@ vertices_version(provider_version_t *version);
 VERTICES_IMPORT ret_code_t
 vertices_ping(void);
 
+VERTICES_IMPORT ret_code_t
+vertices_provider_buf_get(char **buf);
+
 /// Init common accounts on Vertices SDK
 /// \return
 /// * VTC_SUCCESS on success
@@ -120,26 +123,26 @@ vertices_transaction_app_call(account_info_t *account, uint64_t app_id, void *pa
 VERTICES_IMPORT ret_code_t
 vertices_application_get(uint64_t app_id, app_values_t * global_states);
 
-// TODO Asset Transaction
-// /// Get logs after noop tx.
-// /// \param tx_id Transaction ID
-// /// \param res_logs Response Logs After NoOp TX
-// /// \return codes
-// ///     * VTC_SUCCESS on success: key-values have been parsed correctly and put into global_states
-// ///     * VTC_ERROR_INTERNAL if unable to instantiate parser
-// ///     * VTC_ERROR_NOT_FOUND if key not found
-// VERTICES_IMPORT ret_code_t
-// vertices_noop_logs_get(unsigned char * tx_id, unsigned char* res_logs);
-//
-// /// Get asset id after asset creation.
-// /// \param tx_id Transaction ID
-// /// \param asset_id Asset ID which has been created
-// /// \return codes
-// ///     * VTC_SUCCESS on success: key-values have been parsed correctly and put into global_states
-// ///     * VTC_ERROR_INTERNAL if unable to instantiate parser
-// ///     * VTC_ERROR_NOT_FOUND if key not found
-// VERTICES_IMPORT ret_code_t
-// vertices_asset_id_get(unsigned char * tx_id, uint64_t *asset_id);
+
+///// Get logs after noop tx.
+///// \param tx_id Transaction ID
+///// \param res_logs Response Logs After NoOp TX
+///// \return codes
+/////     * VTC_SUCCESS on success: key-values have been parsed correctly and put into global_states
+/////     * VTC_ERROR_INTERNAL if unable to instantiate parser
+/////     * VTC_ERROR_NOT_FOUND if key not found
+//VERTICES_IMPORT ret_code_t
+//vertices_noop_logs_get(unsigned char * tx_id, unsigned char* res_logs);
+
+///// Get asset id after asset creation.
+///// \param tx_id Transaction ID
+///// \param asset_id Asset ID which has been created
+///// \return codes
+/////     * VTC_SUCCESS on success: key-values have been parsed correctly and put into global_states
+/////     * VTC_ERROR_INTERNAL if unable to instantiate parser
+/////     * VTC_ERROR_NOT_FOUND if key not found
+//VERTICES_IMPORT ret_code_t
+//vertices_asset_id_get(unsigned char * tx_id, uint64_t *asset_id);
 
 /// Get transaction based on event (identified by \c vtc_evt_t::bufid)
 /// \param bufid Event bufid
@@ -168,11 +171,18 @@ vertices_event_process(size_t *queue_size, unsigned char * txID);
 
 /// Initialize Vertices SDK
 /// \param config Pass the configuration such as providers and user-defined event handler
+/// \param withNewWallet define if new wallet should be initialized or not
 /// \return
 /// * VTC_SUCCESS on success
 /// * VTC_ERROR_INTERNAL if HTTP client cannot be initialized
 VERTICES_IMPORT ret_code_t
-vertices_new(vertex_t *config);
+vertices_new(vertex_t *config, bool withNewWallet);
+
+/// Clear Cache of Vertices SDK
+/// \return
+/// * VTC_SUCCESS on success
+VERTICES_IMPORT ret_code_t
+vertices_cache_clear();
 
 /// Init Wallet on Vertices SDK
 /// Init accounts
