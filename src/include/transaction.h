@@ -40,4 +40,7 @@ transaction_pending_send(size_t bufid);
 ret_code_t
 transaction_free(size_t bufid);
 
+ret_code_t
+transaction_cache_clear();
+
 #endif //VERTICES_INC_TRANSACTION_H

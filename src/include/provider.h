@@ -61,6 +61,9 @@ ret_code_t
 provider_init(provider_info_t *provider);
 
 ret_code_t
-provider_close(provider_info_t *provider);
+provider_buffer_get(char **buf);
+
+ret_code_t
+provider_cache_clear();
 
 #endif //VERTICES_SRC_PROVIDER_H

@@ -207,7 +207,6 @@ provider_tx_post(const uint8_t *bin_payload, size_t length, unsigned char *tx_id
     if (response_code >= 300)
     {
         err_code = (ret_code_t) ( VTC_ERROR_HTTP_BASE + response_code );        // bug fixing
-//        err_code = VTC_ERROR_HTTP_BASE + response_code;
     }
 
     if (err_code == VTC_SUCCESS)
@@ -362,7 +361,7 @@ ret_code_t
 provider_init(provider_info_t *provider)
 {
     memset(&m_provider.version, 0, sizeof m_provider.version);
-
+    
     rx_buf_size = HTTP_MAXIMUM_CONTENT_LENGTH;
     rx_buf = malloc(rx_buf_size);
     if (!rx_buf) {
@@ -384,7 +383,18 @@ provider_init(provider_info_t *provider)
 }
 
 ret_code_t
-provider_close(provider_info_t *provider) {
+provider_buffer_get(char **buf) {
+    if (rx_buf == NULL) {
+        return VTC_ERROR_NO_MEM;
+    }
+    int len = strlen(rx_buf);
+    *buf = (char *) malloc(len);
+    memcpy(*buf, rx_buf, len);
+    return VTC_SUCCESS;
+}
+
+ret_code_t
+provider_cache_clear() {
     if(rx_buf) {
         free(rx_buf);
         rx_buf = NULL;

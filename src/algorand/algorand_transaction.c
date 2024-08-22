@@ -686,6 +686,16 @@ transaction_free(size_t bufid)
 }
 
 ret_code_t
+transaction_cache_clear() {
+    m_tx_buffer_idx = 0;
+
+    for(int i = 0; i < PENDING_TX_COUNT; i++) {
+        transaction_free(i);
+    }
+    return VTC_SUCCESS;
+}
+
+ret_code_t
 transaction_pending_send(size_t bufid)
 {
     if (m_pending_tx_buffer[bufid].payload_body_length == 0)
