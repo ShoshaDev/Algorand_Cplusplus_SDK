@@ -43,18 +43,19 @@ if( NOT DEFINED VERTICES_TYPE )
 endif()
 
 if( ${VERTICES_TYPE} STREQUAL "SHARED" )
+    set(UNREAL_SDK_PATH "C:/Users/Conan Exiles/Documents/Unreal Projects")
     set(UNREAL_SDK_PROJECT "unreal-algorand-demo")
     set(HEADER_FILES_TO_COPY
-            "../include/vertices.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices.h"
-            "../include/vertices_config.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_config.h"
-            "../include/vertices_errors.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_errors.h"
-            "../include/vertices_http.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_http.h"
-            "../include/vertices_types.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_types.h"
-            "include/vertices_log.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices_log.h"
-            "include/utils/base32.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base32.h"
-            "include/utils/base64.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base64.h"
-            "include/utils/base2048.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base2048.h"
-            "include/utils/sha512_256.h->../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/sha512_256.h"
+            "../include/vertices.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices.h"
+            "../include/vertices_config.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_config.h"
+            "../include/vertices_errors.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_errors.h"
+            "../include/vertices_http.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_http.h"
+            "../include/vertices_types.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices/vertices_types.h"
+            "include/vertices_log.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/vertices_log.h"
+            "include/utils/base32.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base32.h"
+            "include/utils/base64.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base64.h"
+            "include/utils/base2048.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/base2048.h"
+            "include/utils/sha512_256.h->${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/Vertices/Public/include/utils/sha512_256.h"
     )
 endif ()
 
@@ -79,15 +80,15 @@ if (COMPILE_UNIX)
         add_custom_command(TARGET vertices POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_BINARY_DIR}/bin
-                ${CMAKE_BINARY_DIR}/../../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Binaries/ThirdParty/AlgorandLibrary/Win64
+                ${UNREAL_SDK_PATH}/${UNREAL_SDK_PROJECT}/Plugins/Algorand/Binaries/ThirdParty/AlgorandLibrary/Win64
                 COMMENT "Copying vertices.dll from cmake_bin folder to ue binary one"
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_BINARY_DIR}/lib
-                ${CMAKE_BINARY_DIR}/../../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
+                ${UNREAL_SDK_PATH}/${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
                 COMMENT "Copying vertices.lib from cmake_bin folder to ue 3rd-party release one"
                 COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_BINARY_DIR}/bin
-                ${CMAKE_BINARY_DIR}/../../${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
+                ${UNREAL_SDK_PATH}/${UNREAL_SDK_PROJECT}/Plugins/Algorand/Source/ThirdParty/AlgorandLibrary/x64/Release
                 COMMENT "Copying vertices.dll from cmake_bin folder to ue 3rd-party release one")
 
         foreach(file_pair ${HEADER_FILES_TO_COPY})
@@ -103,7 +104,7 @@ if (COMPILE_UNIX)
                         TARGET vertices POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy
                         ${CMAKE_CURRENT_SOURCE_DIR}/${src_file}
-                        ${CMAKE_SOURCE_DIR}/${dest_file}
+                        ${UNREAL_SDK_PATH}/${dest_file}
                         COMMENT "Copying ${src_file} to ${dest_file}"
                 )
             endif ()
