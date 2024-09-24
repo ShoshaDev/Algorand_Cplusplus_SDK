@@ -97,7 +97,7 @@ ret_code_t
 s_accounts_all_get(s_account_t **accounts);
 
 ret_code_t
-s_account_update(s_account_t **account);
+s_account_update(s_account_t *account);
 
 ret_code_t
 s_account_init(void);

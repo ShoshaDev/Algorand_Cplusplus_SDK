@@ -482,7 +482,7 @@ vertices_s_accounts_all_get(s_account_t **accounts)
 }
 
 VERTICES_EXPORT ret_code_t
-vertices_s_account_update(s_account_t **account)
+vertices_s_account_update(s_account_t *account)
 {
     return s_account_update(account);
 }

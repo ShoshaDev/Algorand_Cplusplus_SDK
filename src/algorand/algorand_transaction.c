@@ -144,7 +144,28 @@ encode_tx(transaction_t *tx)
     }
 
     if(tx->details->tx_type == ALGORAND_ASSET_CONFIGURATION_TRANSACTION) {
-        uint32_t asset_param_map_element_count = 9;
+        uint32_t asset_param_map_element_count = 4;
+
+        if(strlen((char *)tx->details->tx.acfg.manager) != 0) {
+            asset_param_map_element_count ++;
+        }
+
+        if(strlen((char *)tx->details->tx.acfg.reserve) != 0) {
+            asset_param_map_element_count ++;
+        }
+
+        if(strlen((char *)tx->details->tx.acfg.freeze) != 0) {
+            asset_param_map_element_count ++;
+        }
+
+        if(strlen((char *)tx->details->tx.acfg.clawback) != 0) {
+            asset_param_map_element_count ++;
+        }
+
+        if(strlen((char *)tx->details->tx.acfg.url) != 0) {
+            asset_param_map_element_count ++;
+        }
+
         if(tx->details->tx.acfg.isFrozen) {
             asset_param_map_element_count ++;
         }
@@ -155,11 +176,15 @@ encode_tx(transaction_t *tx)
             mpack_write_cstr(&writer, "an");
             mpack_write_cstr(&writer, tx->details->tx.acfg.asset_name);
 
-            mpack_write_cstr(&writer, "au");
-            mpack_write_cstr(&writer, tx->details->tx.acfg.url);
+            if(strlen((char *)tx->details->tx.acfg.url) != 0) {
+                mpack_write_cstr(&writer, "au");
+                mpack_write_cstr(&writer, tx->details->tx.acfg.url);
+            }
 
-            mpack_write_cstr(&writer, "c");
-            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.clawback, ADDRESS_LENGTH);
+            if(strlen((char *)tx->details->tx.acfg.clawback) != 0) {
+                mpack_write_cstr(&writer, "c");
+                mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.clawback, ADDRESS_LENGTH);
+            }
 
             mpack_write_cstr(&writer, "dc");
             mpack_write_uint(&writer, tx->details->tx.acfg.decimals);
@@ -169,14 +194,20 @@ encode_tx(transaction_t *tx)
                 mpack_write_true(&writer);
             }
 
-            mpack_write_cstr(&writer, "f");
-            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.freeze, ADDRESS_LENGTH);
+            if(strlen((char *)tx->details->tx.acfg.freeze) != 0) {
+                mpack_write_cstr(&writer, "f");
+                mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.freeze, ADDRESS_LENGTH);
+            }
 
-            mpack_write_cstr(&writer, "m");
-            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.manager, ADDRESS_LENGTH);
+            if(strlen((char *)tx->details->tx.acfg.manager) != 0) {
+                mpack_write_cstr(&writer, "m");
+                mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.manager, ADDRESS_LENGTH);
+            }
 
-            mpack_write_cstr(&writer, "r");
-            mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.reserve, ADDRESS_LENGTH);
+            if(strlen((char *)tx->details->tx.acfg.reserve) != 0) {
+                mpack_write_cstr(&writer, "r");
+                mpack_write_bin(&writer, (const char*) tx->details->tx.acfg.reserve, ADDRESS_LENGTH);
+            }
 
             mpack_write_cstr(&writer, "t");
             mpack_write_uint(&writer, tx->details->tx.acfg.total);

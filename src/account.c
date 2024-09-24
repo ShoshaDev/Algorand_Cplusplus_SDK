@@ -282,12 +282,12 @@ s_wallet_exists(void) {
 }
 
 static bool
-s_account_exists_by_addr(s_account_t **account)
+s_account_exists_by_addr(s_account_t *account)
 {
     uint32_t i = 0;
     for (; i < SECRET_ACCOUNTS_MAXIMUM_COUNT; ++i)
     {
-        if (*account == (s_account_t *) &s_accounts[i])
+        if (account == (s_account_t *) &s_accounts[i])
         {
             return true;
         }
@@ -346,18 +346,18 @@ s_accounts_all_get(s_account_t **accounts) {
 }
 
 ret_code_t
-s_account_update(s_account_t **account) {
-    if (s_account_exists_by_addr(*account))
+s_account_update(s_account_t *account) {
+    if (s_account_exists(account->name))
     {
         account_details_t accountDetails;
         memcpy(&accountDetails.info,
-               (*account)->vtc_account,
+               account->vtc_account,
                sizeof(account_info_t));
 
         // update account info
         ret_code_t err_code = provider_account_info_get(&accountDetails);
 
-        memcpy((*account)->vtc_account,
+        memcpy(account->vtc_account,
                &accountDetails.info,
                sizeof(account_info_t));
         return err_code;

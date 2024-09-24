@@ -397,7 +397,7 @@ main(int argc, char *argv[]) {
 
     action_t run_tx;
     run_tx.kind = TX_TYPE;
-    run_tx.action.tx_type = AXFER_TX;
+    run_tx.action.tx_type = ACFG_TX;
 
     // init provider
     init_provider();
@@ -501,14 +501,14 @@ main(int argc, char *argv[]) {
                                                        (char *) alice_account.vtc_account->public_key, // (char *) manager_account.vtc_account->public_key,
                                                        (char *) reserve_account.vtc_account->public_key,
                                                        (char *) freeze_account.vtc_account->public_key,
-                                                       (char *) alice_account.vtc_account->public_key,
+                                                       (char *) clawback_account.vtc_account->public_key,
                                                        0,
                                                        10000,
                                                        8,
                                                        true,
                                                        (void *) "USD",
                                                        (void *) "SHOSHA",
-                                                       (void *) "http://this.test.com",
+                                                       (void *)"",  // (void *) "http://this.test.com"
                                                        notes
                                                        );
                 VTC_ASSERT(err_code);
