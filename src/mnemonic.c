@@ -50,14 +50,17 @@ void insert_word_map(WordMap* map, const char* key, int value) {
     map->values[map->size++] = value;
 }
 
-int lookup_word_map(WordMap* map, const char* key) {
+ret_code_t lookup_word_map(WordMap* map, const char* key, int *value) {
     for (int i = 0; i < map->size; ++i) {
         if (strcmp(map->keys[i], key) == 0) {
-            return map->values[i];
+            *value = map->values[i];
         }
     }
-    fprintf(stderr, "Invalid word: %s\n", key);
-    exit(EXIT_FAILURE);
+    if(*value == -1) {
+        LOG_ERROR("Invalid word: %s\n", key);
+        return VTC_ERROR_INVALID_PARAM;
+    }
+    return VTC_SUCCESS;
 }
 
 void free_word_map(WordMap* map) {
@@ -112,23 +115,23 @@ WordVector make_word_vector(const char* s) {
     return vec;
 }
 
-uint16_t checksum(bytes b) {
+ ret_code_t checksum(bytes b, uint16_t* check_value) {
     unsigned char result[32] = {0};
     ret_code_t err_code = VTC_SUCCESS;
 
     err_code = sha512_256((const unsigned char*)b.data, b.size, result, 32);
     if (err_code != VTC_SUCCESS) {
-        fprintf(stderr, "SHA512/256 error\n");
-        exit(EXIT_FAILURE);
+        LOG_ERROR( "SHA512/256 error\n");
+        return VTC_ERROR_INVALID_STATE;
     }
 
     bytes hash = { result, 32 };
     bytes short_hash = { result, 2 };
 
     Uint16Vector ints = b2048_encode(&short_hash);
-    uint16_t check_value = ints.data[0];
+    *check_value = ints.data[0];
     free_uint16_vector(&ints);
-    return check_value;
+    return VTC_SUCCESS;
 }
 
  ret_code_t mnemonic_from_seed(bytes seed, char **mnemonic) {
@@ -138,7 +141,14 @@ uint16_t checksum(bytes b) {
     for (size_t i = 0; i < encoded.size; ++i) {
         mnemonic_len += strlen(word_vec.words[encoded.data[i]]) + 1;
     }
-    mnemonic_len += strlen(word_vec.words[checksum(seed)]) + 1;
+
+    uint16_t checkVal = -1;
+    ret_code_t err_code = checksum(seed, &checkVal);
+    if(err_code != VTC_SUCCESS) {
+        return err_code;
+    }
+
+    mnemonic_len += strlen(word_vec.words[checkVal]) + 1;
 
     *mnemonic = (char*)malloc(mnemonic_len);
     *mnemonic[0] = '\0';
@@ -147,7 +157,13 @@ uint16_t checksum(bytes b) {
         strcat(*mnemonic, word_vec.words[encoded.data[i]]);
         strcat(*mnemonic, " ");
     }
-    strcat(*mnemonic, word_vec.words[checksum(seed)]);
+
+    err_code = checksum(seed, &checkVal);
+    if(err_code != VTC_SUCCESS) {
+        return err_code;
+    }
+
+    strcat(*mnemonic, word_vec.words[checkVal]);
 
     free_uint16_vector(&encoded);
 
@@ -164,7 +180,12 @@ ret_code_t seed_from_mnemonic(const char* mnemonic, bytes *seed) {
         return VTC_ERROR_INTERNAL;
     }
 
-    int checkval = lookup_word_map(&word_map, checkword);
+    int checkVal = -1;
+    ret_code_t err_code = lookup_word_map(&word_map, checkword, &checkVal);
+
+    if(err_code != VTC_SUCCESS) {
+        return err_code;
+    }
 
     seed->data = (unsigned char*)malloc(32 * sizeof(unsigned char));
     seed->size = 0;
@@ -172,7 +193,13 @@ ret_code_t seed_from_mnemonic(const char* mnemonic, bytes *seed) {
     unsigned val = 0;
     int bits = 0;
     for (int i = 0; i < words.size; ++i) {
-        val |= lookup_word_map(&word_map, words.words[i]) << bits;
+        int wordVal = -1;
+        err_code = lookup_word_map(&word_map, words.words[i], &wordVal);
+        if(err_code != VTC_SUCCESS) {
+            return err_code;
+        }
+
+        val |= wordVal << bits;
         bits += 11;
         while (bits >= 8) {
             seed->data[seed->size++] = val & 0xFF;
@@ -188,10 +215,15 @@ ret_code_t seed_from_mnemonic(const char* mnemonic, bytes *seed) {
     assert(seed->data[seed->size - 1] == 0); // last byte is supposed to be zero
     seed->size--;
 
-    uint16_t check = checksum(*seed);
-    if (check != checkval) {
-        fprintf(stderr, "%s != %s\n", word_vec.words[check], word_vec.words[checkval]);
-        exit(EXIT_FAILURE);
+    uint16_t check = -1;
+    err_code = checksum(*seed, &check);
+    if(err_code != VTC_SUCCESS) {
+        return err_code;
+    }
+
+    if (check != checkVal) {
+        LOG_ERROR("%s != %s\n", word_vec.words[check], word_vec.words[checkVal]);
+        return VTC_ERROR_INVALID_STATE;
     }
 
     free_word_vector(&words);
