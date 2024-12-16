@@ -1,4 +1,5 @@
 # Algorand C++ SDK
+# This build is still under construction. Use is at your own risk.
 This repo is providing C++ sdk on algorand chain.
 =======
 # 💎 Algorand SDK
