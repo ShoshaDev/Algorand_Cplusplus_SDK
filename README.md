@@ -101,5 +101,4 @@ make all
 
 Checkout the [Readme](/tests/README.md) for more information.
 
-## 🙌 Contributing
 
