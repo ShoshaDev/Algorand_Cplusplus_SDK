@@ -7,28 +7,7 @@ This repo is providing C++ sdk on algorand chain.
 
 The Algorand SDK provides developers with an easy way for devices to interact with Algorand chain.
 
-We are doing our best to achieve those goals:
 
-- C library, can be included into C++ projects.
-- Can be easily imported into any project
-- Examples provided:
-  - [Unix-based OSes](examples/unix)
-  - Windows (``not completed``)
-- Connect to any Algorand API (local or remote provider)
-- Build with CMake and Make
-- Continuous Integration to maintain code quality:
-  - Build static and shared library for several targets
-  - Unit-Testing
-
-At this sdk, there are some todo list to add new features:
-
-- some bugs exists when compiling on some toolchains.  (Windows, Linux and Mac OS)
-- Update some actions for building tx and requesting api , which can integrate as a thirdparty plugin easily. 
-- add new functions to create wallet provider.
-
-> ⚠️  IMPORTANT
-> - The current version of the SDK is still *early*.
-> - Development is ongoing and new transactions cases to be added.
 
 ## 🧭 Repository structure
 
