@@ -1,8 +1,4 @@
 # Algorand C++ SDK
-This repo is providing C++ sdk on algorand chain.
-=======
-# 💎 Algorand SDK
-
 ## 📑 Specifications
 
 The Algorand SDK provides developers with an easy way for devices to interact with Algorand chain.
