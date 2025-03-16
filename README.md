@@ -1,8 +1,12 @@
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/0d58cd29-d5ca-4771-a3e4-25b577bbb01a">
+</div>
+
 # Algorand C++ SDK
 ## 📑 Specifications
 
 The Algorand SDK provides developers with an easy way for devices to interact with Algorand chain.
-
+In cooperation with the [Algorand Foundation](https://algorand.co/).
 
 
 ## 🧭 Repository structure
